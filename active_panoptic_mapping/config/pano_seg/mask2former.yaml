@@ -1,0 +1,3 @@
+predictor:
+  type: "mask2former"
+  model_dir: "/home/giuliano/mt_ipp_panoptic_mapping/catkin_ws/src/active_panoptic_mapping/active_panoptic_mapping/models/mask2former_swin_tiny_scannet"
