@@ -38,6 +38,10 @@
 
 # Package Dependencies. Notice that voxblox requires a special branch.
 - git:
+    local-name: panoptic_mapping
+    uri: git@github.com:ethz-asl/panoptic_mapping.git
+    version: devel/active-panoptic-mapping
+- git:
     local-name: voxblox
     uri: git@github.com:ethz-asl/voxblox.git
     version: 'devel/panoptic_mapping'
