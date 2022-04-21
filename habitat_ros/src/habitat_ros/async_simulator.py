@@ -43,12 +43,11 @@ def make_depth_camera_info_msg(header, height, width):
     camera_info_msg.P = [fx, 0, cx, 0, 0, fy, cy, 0, 0, 0, 1, 0]
     return camera_info_msg
 
-def cv2_to_depthmsg(depth_img: np.ndarray):
+def cv2_to_depthmsg(depth_img: np.ndarray) -> Image:
     r"""
-    Converts a Habitat depth image to a ROS DepthImage message.
+    Converts a Habitat depth image to a ROS Image message.
     :param depth_img: depth image as a numpy array
-    :returns: a ROS Image message if using continuous agent; or
-        a ROS DepthImage message if using discrete agent
+    :returns: a ROS Image
     """
     # depth reading should be denormalized, so we get
     # readings in meters
@@ -121,6 +120,7 @@ class AsyncSimulator(Thread):
         sensor_height: float,
         sim_rate: float,
         enable_physics: bool = False,
+        use_embodied_agent: bool = False,
     ):
         super().__init__()
 
@@ -186,21 +186,21 @@ class AsyncSimulator(Thread):
         )
 
         # Get the physics object attributes manager
-        obj_templates_mgr = self.sim.get_object_template_manager()
+        if use_embodied_agent:
+            # TODO: parameter parsing scattered everywhere is bad
+            robot_config_dir = rospy.get_param("~robot_config_dir")
 
-        # Instantiate object
-        # FIXME: change this to mav urdf
-        locobot_template_id = obj_templates_mgr.load_configs(
-            "/home/giuliano/mt_ipp_panoptic_mapping"
-            "/habitat-sim/data/objects/locobot_merged"
-        )[0]
+            obj_templates_mgr = self.sim.get_object_template_manager()
 
-        self.agent_body = self.sim.add_object(
-            locobot_template_id, self.agent.scene_node
-        )
+            # Instantiate object
+            # FIXME: load urdf with mesh instead
+            # fmt: off
+            locobot_template_id = obj_templates_mgr.load_configs(robot_config_dir)[0]
+            # fmt: on
 
-        # Add object to the scene representing the agent
-        # FIXME: let's start with a sphere
+            self.agent_body = self.sim.add_object(
+                locobot_template_id, self.agent.scene_node
+            )
 
         # Create velocity control object
         self.vel_control = habitat_sim.physics.VelocityControl()
