@@ -193,7 +193,7 @@ dependencies:
   - nspr=4.32=h9c3ff4c_1
   - nss=3.77=h2350873_0
   - numba=0.53.1=py38h8b71fd7_1
-  - numpy=1.22.3=py38h1d589f8_2
+  - numpy=1.21.2=py38he2449b9_0
   - ogre=1.10.12=h7cc4a1d_8
   - openexr=3.1.5=he0ac6c6_0
   - openh264=2.1.1=h780b84a_0
@@ -535,18 +535,16 @@ dependencies:
     - black==21.4b2
     - cloudpickle==2.0.0
     - cython==0.29.28
-    - detectron2==0.6
+    - git+https://github.com/facebookresearch/detectron2@v0.6#egg=detectron2
     - fvcore==0.1.5.post20220414
     - gym==0.23.1
     - gym-notices==0.0.6
-    - habitat-sim==0.2.1
     - hydra-core==1.1.2
     - idna==3.3
     - ifcfg==0.22
     - importlib-metadata==4.11.3
     - iopath==0.1.9
     - moviepy==2.0.0.dev2
-    - multiscaledeformableattention==1.0
     - oauthlib==3.2.0
     - omegaconf==2.1.2
     - portalocker==2.4.0
