@@ -12,7 +12,7 @@ from detectron2.structures import ImageList
 from detectron2.utils.memory import retry_if_cuda_oom
 from detectron2.config import get_cfg
 from detectron2.projects.deeplab import add_deeplab_config
-from detectron2.data import MetadataCatalog
+from detectron2.utils.visualizer import Visualizer
 
 from pano_seg.mask2former import add_maskformer2_config
 from pano_seg.predictors.predictor_base import PredictorBase
@@ -65,10 +65,10 @@ class MaskFormerWrapper(MaskFormer):
             )(mask_cls_result, mask_pred_result)
             processed_results.append(
                 {
-                    "panoptic_seg": panoptic_seg.cpu().numpy(),
+                    "panoptic_seg": panoptic_seg,
                     "segments_info": segments_info,
-                    "mask_logits": mask_logits.cpu().numpy(),
-                    "mask_probs": mask_probs.cpu().numpy(),
+                    "mask_logits": mask_logits,
+                    "mask_probs": mask_probs,
                 }
             )
 
@@ -155,7 +155,9 @@ def _make_mask2former_cfg(config_file_path: Path, checkpoint_file_path: Path):
 class Mask2FormerPredictor(PredictorBase):
     """Adapted from detectron2 DefaultPredictor"""
 
-    def __init__(self, model_dir_path: Path):
+    def __init__(self, model_dir_path: Path, visualize: bool = True):
+
+        self.visualize = visualize
 
         if not model_dir_path.is_dir():
             raise FileNotFoundError(f"{model_dir_path} is not a valid directory!")
@@ -201,5 +203,13 @@ class Mask2FormerPredictor(PredictorBase):
 
             inputs = {"image": image, "height": height, "width": width}
             predictions = self.model([inputs])[0]
+
+            if self.visualize:
+                visualizer = Visualizer(original_image, metadata=self.model.metadata)
+                vis_image = visualizer.draw_panoptic_seg(predictions["panoptic_seg"].cpu(), predictions["segments_info"])
+                predictions["panoptic_seg_vis"] = vis_image.get_image()
+
+            for k in ["panoptic_seg", "mask_logits", "mask_probs"]:
+                predictions[k] = predictions[k].cpu().numpy()
 
             return predictions

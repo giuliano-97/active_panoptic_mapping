@@ -5,7 +5,7 @@ from pano_seg.predictors.predictor_base import PredictorBase
 
 class PredictorFactory:
     @staticmethod
-    def get_predictor(predictory_type: str, model_dir_path: Path) -> PredictorBase:
+    def get_predictor(predictory_type: str, model_dir_path: Path, visualize: bool = False) -> PredictorBase:
         if predictory_type.lower() == "maxdeeplab":
             from pano_seg.predictors.max_deeplab import MaXDeepLabPredictor
 
@@ -13,6 +13,6 @@ class PredictorFactory:
         elif predictory_type.lower() == "mask2former":
             from pano_seg.predictors.mask2former import Mask2FormerPredictor
 
-            return Mask2FormerPredictor(model_dir_path)
+            return Mask2FormerPredictor(model_dir_path, visualize=visualize)
         else:
             raise ValueError("Invalid predictor type!")
