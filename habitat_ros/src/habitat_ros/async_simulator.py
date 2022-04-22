@@ -142,7 +142,7 @@ class AsyncSimulator(Thread):
 
         # Configure publishers to sensor topics
         self.rgb_pub = rospy.Publisher("~rgb", Image, queue_size=100)
-        self.depth_pub = rospy.Publisher("depth", Image, queue_size=100)
+        self.depth_pub = rospy.Publisher("~depth", Image, queue_size=100)
         # fmt: off
         self.rgb_3rd_person_pub = rospy.Publisher("rgb_3rd_person", Image, queue_size=100)
         self.camera_info_pub = rospy.Publisher("camera_info", CameraInfo, queue_size=100)
