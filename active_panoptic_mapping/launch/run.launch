@@ -1,17 +1,33 @@
 <launch>
-    <node pkg="active_panoptic_mapping" type="pano_seg_node.py" name="pano_seg_node" output="screen">
+
+    <arg name="namespace" default="active_panoptic_mapping"/>
+    <arg name="visualize" default="false"/> 
+
+    <!-- Panoptic segmentation predictor -->
+    <node pkg="active_panoptic_mapping" type="pano_seg_predictor.py" name="pano_seg_node" output="screen">
         <rosparam file="$(find active_panoptic_mapping)/config/pano_seg/mask2former.yaml"/>
-        <remap from="~input_image" to="color_image" />  
-        <remap from="~pano_seg" to="id_image" />  
+        <remap from="~input_image" to="$(arg namespace)/color_image" />  
+        <remap from="~pano_seg" to="$(arg namespace)/segmentation_image" />  
+        <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
     </node>
 
+    <!-- Habitat Sim -->
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
         <rosparam file="$(find habitat_ros)/config/rgbd.yaml" command="load" />
-        <!-- <param name="scene_file" value="/media/giuliano/wd_ssd/datasets/habitat_test_data/habitat_test_scenes/versioned_data/habitat_test_scenes_1.0/apartment_1.glb" /> -->
-        <param name="scene_file" value="/media/giuliano/wd_ssd/datasets/replica/apartment_0/habitat/mesh_semantic.ply" />
+        <param name="scene_file" value="/media/scratch1/albanesg/replica/room_2/habitat/mesh_semantic.ply" />
         <param name="enable_physics" value="false"/>
-        <remap from="~rgb" to="color_image"/>
+        <remap from="~rgb" to="$(arg namespace)/color_image"/>
+        <remap from="~depth" to="$(arg namespace)/depth_image"/>
     </node>
 
-    <node pkg="rviz" name="rviz" type="rviz" output="screen" args="-d $(find habitat_ros)/rviz/devel.rviz"/>
+    <!-- Mapper -->
+    <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" required="false">
+        <rosparam file="$(find active_panoptic_mapping)/config/mapper/single_tsdf_variable_count.yaml"/>
+        <remap from="color_image_in" to="$(arg namespace)/color_image"/>
+        <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
+        <remap from="segmentation_image_in" to="$(arg namespace)/segmentation_image"/>
+        <remap from="labels_in" to="$(arg namespace)/segmentation_labels"/>
+    </node>  
+
+
 </launch>

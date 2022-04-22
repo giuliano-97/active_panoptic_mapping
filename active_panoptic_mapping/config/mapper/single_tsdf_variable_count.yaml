@@ -14,17 +14,17 @@ ros_spinning_threads: 4
 
 labels:
   type: csv
-  file_name: /home/giuliano/mt_ipp_panoptic_mapping/datasets/scannetv2/nyu40_detectron_labels.csv
+  file_name: /media/scratch1/albanesg/scans/nyu40_detectron_labels.csv
 
 camera:
   verbosity: 1
-  width: 320 # Px
-  height: 240
-  vx: 159.579023
-  vy: 121.469512
-  fx: 288.795332
-  fy: 289.364901
-  max_range: 5 # m
+  width: 640  # Px
+  height: 480
+  vx: 320
+  vy: 240
+  fx: 320
+  fy: 320
+  max_range: 5  # m
   min_range: 0.1
 
 id_tracker:
@@ -41,7 +41,7 @@ id_tracker:
   min_new_instance_size: 500
   use_class_for_instance_tracking: false
   use_one_to_one_matching: true
-  use_uncertainty: true
+  use_uncertainty: false
   tracking_metric: IoU # IoU, overlap
   match_acceptance_threshold: 0.6
   classification:
@@ -114,5 +114,5 @@ data_writer:
   verbosity: 1
   store_map_every_n_frames: 25
   log_data_writer:
-    output_directory: /media/giuliano/wd_ssd/runs/scene0011_01/single_tsdf_count_pred_labels
+    output_directory: /media/scratch1/runs/replica/room_2
     
