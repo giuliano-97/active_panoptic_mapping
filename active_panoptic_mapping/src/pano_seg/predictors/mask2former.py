@@ -180,10 +180,16 @@ class Mask2FormerPredictor(PredictorBase):
             raise FileNotFoundError("Model metadata file not found!")
         with metadata_file_path.open("r") as f:
             metadata_dict = json.load(f)
-        
+
         # Hack to avoid error due to different dataset name
         del metadata_dict["name"]
         self.model.metadata.set(**metadata_dict)
+
+        # For reverse lookup of category id
+        self.contiguous_id_to_dataset_id = {
+            int(v): int(k)
+            for k, v in self.model.metadata.stuff_dataset_id_to_contiguous_id.items()
+        }
 
         checkpointer = DetectionCheckpointer(self.model)
         _ = checkpointer.load(self.cfg.MODEL.WEIGHTS)
@@ -206,10 +212,16 @@ class Mask2FormerPredictor(PredictorBase):
 
             if self.visualize:
                 visualizer = Visualizer(original_image, metadata=self.model.metadata)
-                vis_image = visualizer.draw_panoptic_seg(predictions["panoptic_seg"].cpu(), predictions["segments_info"])
+                vis_image = visualizer.draw_panoptic_seg(
+                    predictions["panoptic_seg"].cpu(), predictions["segments_info"]
+                )
                 predictions["panoptic_seg_vis"] = vis_image.get_image()
 
             for k in ["panoptic_seg", "mask_logits", "mask_probs"]:
                 predictions[k] = predictions[k].cpu().numpy()
+
+            # Category id reverse lookup
+            for sinfo in predictions["segments_info"]:
+                sinfo["category_id"] = self.contiguous_id_to_dataset_id[sinfo["category_id"]]
 
             return predictions

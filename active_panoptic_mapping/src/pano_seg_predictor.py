@@ -34,13 +34,18 @@ class PanopticSegmentationNode:
         # Init node
         rospy.init_node("pano_seg_node")
 
+        # Configure input image subscriber
+        self.img_sub = rospy.Subscriber("~input_image", Image, callback=self.predict_cb)
+
         # Load params
         self.visualize = rospy.get_param("~visualize", False)
         predictor_type = rospy.get_param("~predictor/type")
         model_dir_path = Path(rospy.get_param("~predictor/model_dir"))
 
         # Instantiate predictor
-        self.predictor = PredictorFactory.get_predictor(predictor_type, model_dir_path, self.visualize)
+        self.predictor = PredictorFactory.get_predictor(
+            predictor_type, model_dir_path, self.visualize
+        )
 
         # Configure pano seg publisher
         self.cv_bridge = CvBridge()
@@ -48,17 +53,16 @@ class PanopticSegmentationNode:
         self.labels_pub = rospy.Publisher("~labels", DetectronLabels, queue_size=100)
 
         if self.visualize:
-            self.pano_seg_vis_pub = rospy.Publisher("~pano_seg_vis", Image, queue_size=100)
-
-        # Configure image subscriber
-        self.img_sub = rospy.Subscriber("~input_image", Image, callback=self.predict_cb)
+            self.pano_seg_vis_pub = rospy.Publisher(
+                "~pano_seg_vis", Image, queue_size=100
+            )
 
     def predict_cb(self, img_msg: Image):
         image = self.cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
 
         predictions = self.predictor(image)
 
-        header = Header(stamp=rospy.Time.now(), frame_id="depth_cam")
+        header = Header(stamp=img_msg.header.stamp, frame_id="depth_cam")
 
         pano_seg_msg = self.cv_bridge.cv2_to_imgmsg(predictions["panoptic_seg"])
         pano_seg_msg.header = header
@@ -69,11 +73,14 @@ class PanopticSegmentationNode:
         self.labels_pub.publish(labels_msg)
 
         if self.visualize:
-            pano_seg_vis_msg = self.cv_bridge.cv2_to_imgmsg(predictions["panoptic_seg_vis"])
+            pano_seg_vis_msg = self.cv_bridge.cv2_to_imgmsg(
+                predictions["panoptic_seg_vis"]
+            )
             pano_seg_vis_msg.header = header
             self.pano_seg_vis_pub.publish(pano_seg_vis_msg)
 
 
 if __name__ == "__main__":
     pano_seg_node = PanopticSegmentationNode()
+    rospy.loginfo("Predictor was successfully loaded.")
     rospy.spin()
