@@ -5,7 +5,7 @@ import rospy
 from geometry_msgs.msg import Twist
 
 from habitat_ros.async_simulator import AsyncSimulator
-from habitat_ros.conversion_utils import (
+from habitat_ros.utils.conversions import (
     vector3_to_numpy,
     vec_ros_to_habitat,
 )
@@ -57,6 +57,9 @@ class HabitatSimNode:
         try:
             # Start the simulator in a separate thread
             self.async_sim.start()
+            # FIXME: hack to make sure the predictor has come alive before start publishing
+            rospy.loginfo("Waiting for pano seg predictor node to be ready.")
+            # rospy.sleep(10.0)
             _r = rospy.Rate(self.sensor_rate)
             while not rospy.is_shutdown():
                 self.async_sim.publish_sensor_observations_and_odometry()

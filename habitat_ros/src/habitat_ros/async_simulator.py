@@ -1,3 +1,4 @@
+from re import S
 from threading import Thread, Lock
 
 from cv_bridge import CvBridge
@@ -18,7 +19,12 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
 
-from habitat_ros.conversion_utils import numpy_to_vector3, vec_habitat_to_ros, quat_habitat_to_ros
+from habitat_ros.utils.conversions import (
+    numpy_to_vector3,
+    vec_habitat_to_ros,
+    quat_habitat_to_ros,
+    REPLICA_CLASS_ID_TO_NYU40,
+)
 
 
 def make_depth_camera_info_msg(header, height, width):
@@ -43,23 +49,6 @@ def make_depth_camera_info_msg(header, height, width):
     camera_info_msg.P = [fx, 0, cx, 0, 0, fy, cy, 0, 0, 0, 1, 0]
     return camera_info_msg
 
-def cv2_to_depthmsg(depth_img: np.ndarray) -> Image:
-    r"""
-    Converts a Habitat depth image to a ROS Image message.
-    :param depth_img: depth image as a numpy array
-    :returns: a ROS Image
-    """
-    # depth reading should be denormalized, so we get
-    # readings in meters
-    if len(depth_img.shape) > 2:
-        depth_img_in_m = np.squeeze(depth_img, axis=2)
-    else:
-        depth_img_in_m = depth_img
-    depth_msg = CvBridge().cv2_to_imgmsg(
-        depth_img_in_m.astype(np.float32),
-        encoding="passthrough",
-    )
-    return depth_msg
 
 def make_agent_cfg(image_width: int, image_height: int, sensor_height: float):
     agent_cfg = habitat_sim.AgentConfiguration()
@@ -92,6 +81,14 @@ def make_agent_cfg(image_width: int, image_height: int, sensor_height: float):
     color_sensor_3rd_person_spec.sensor_subtype = habitat_sim.SensorSubType.PINHOLE
     sensor_specs.append(color_sensor_3rd_person_spec)
 
+    semantic_sensor_spec = habitat_sim.CameraSensorSpec()
+    semantic_sensor_spec.uuid = "semantic_sensor"
+    semantic_sensor_spec.sensor_type = habitat_sim.SensorType.SEMANTIC
+    semantic_sensor_spec.resolution = np.array([[image_height], [image_width]])
+    semantic_sensor_spec.position = [0.0, sensor_height, 0.0]
+    semantic_sensor_spec.sensor_subtype = habitat_sim.SensorSubType.PINHOLE
+    sensor_specs.append(semantic_sensor_spec)
+
     agent_cfg.sensor_specifications = sensor_specs
 
     return agent_cfg
@@ -103,6 +100,23 @@ def make_sim_cfg(scene_file_path: str, enable_physics: bool = True):
     sim_cfg.scene_id = scene_file_path
     sim_cfg.enable_physics = enable_physics
     return sim_cfg
+
+
+def get_instance_id_to_category_id_map(scene, is_replica: bool):
+    instance_id_to_category_id_map = {0: 0}
+    for obj in scene.objects:
+        if obj is None:
+            continue
+        if obj.id is None:
+            continue
+        if obj.category is None:
+            continue
+        instance_id = int(obj.id.split("_")[-1])
+        category_id = obj.category.index()
+        if is_replica:
+            category_id = REPLICA_CLASS_ID_TO_NYU40[category_id]
+        instance_id_to_category_id_map[instance_id] = category_id
+    return instance_id_to_category_id_map
 
 
 class AsyncSimulator(Thread):
@@ -121,6 +135,8 @@ class AsyncSimulator(Thread):
         sim_rate: float,
         enable_physics: bool = False,
         use_embodied_agent: bool = False,
+        # TODO: there should be a better way to infer the dataset
+        is_replica: bool = True,
     ):
         super().__init__()
 
@@ -134,21 +150,26 @@ class AsyncSimulator(Thread):
         self.sim_rate = float(sim_rate)
         self.time_step = float(1.0 / self.sim_rate)
         self.enable_physics = enable_physics
+        self.is_replica = is_replica
 
         # TODO: make these configurable or read from rosparam server
         self.global_frame_name = "world"
         self.agent_frame_name = "base_link"
         self.sensor_frame_name = "depth_cam"
 
+        self.cv_bridge = CvBridge()
+
         # Configure publishers to sensor topics
         self.rgb_pub = rospy.Publisher("~rgb", Image, queue_size=100)
         self.depth_pub = rospy.Publisher("~depth", Image, queue_size=100)
+        self.segmentation_pub = rospy.Publisher("~segmentation", Image, queue_size=100)
+        self.semantic_pub = rospy.Publisher("~semantic", Image, queue_size=100)
         # fmt: off
-        self.rgb_3rd_person_pub = rospy.Publisher("rgb_3rd_person", Image, queue_size=100)
-        self.camera_info_pub = rospy.Publisher("camera_info", CameraInfo, queue_size=100)
+        self.rgb_3rd_person_pub = rospy.Publisher("~rgb_3rd_person", Image, queue_size=100)
+        self.camera_info_pub = rospy.Publisher("~camera_info", CameraInfo, queue_size=100)
         # fmt: on
-        self.pose_pub = rospy.Publisher("pose", PoseStamped, queue_size=100)
-        self.odom_pub = rospy.Publisher("odom", Odometry, queue_size=100)
+        self.pose_pub = rospy.Publisher("~pose", PoseStamped, queue_size=100)
+        self.odom_pub = rospy.Publisher("~odom", Odometry, queue_size=100)
         self.tf_broadcaster = tf.TransformBroadcaster()
 
         # Configure static transform broadcaster for static transforms
@@ -209,75 +230,120 @@ class AsyncSimulator(Thread):
         self.vel_control.lin_vel_is_local = True
         self.vel_control.ang_vel_is_local = True
 
+        # Cache instance to class ids mapping
+        self.instance_id_to_class_id = get_instance_id_to_category_id_map(
+            self.sim.semantic_scene, self.is_replica
+        )
+
         # Simulator lock to avoid reading sensor data or updating
         # the velocity command while the simulation is being stepped
         self.sim_lock = Lock()
 
+    def cv2_to_depthmsg(self, depth_img: np.ndarray) -> Image:
+        r"""
+        Converts a Habitat depth image to a ROS Image message.
+        """
+        if len(depth_img.shape) > 2:
+            depth_img_in_m = np.squeeze(depth_img, axis=2)
+        else:
+            depth_img_in_m = depth_img
+        depth_msg = self.cv_bridge.cv2_to_imgmsg(
+            depth_img_in_m.astype(np.float32),
+            encoding="passthrough",
+        )
+        return depth_msg
+
+    def _convert_instance_to_semantic_segmentation(self, segmentation):
+        ids, inv = np.unique(segmentation, return_inverse=True)
+        return np.array(
+            [
+                self.instance_id_to_class_id[x]
+                if x in self.instance_id_to_class_id
+                else 0
+                for x in ids
+            ]
+        )[inv].reshape(segmentation.shape)
+
     def publish_sensor_observations_and_odometry(self):
+        # Acquire the lock to get the sensor info then release it
+        # so the simulation thread is not waiting for too long
         with self.sim_lock:
+            timestamp = rospy.Time.now()
+
             # Collect sensor observations
             observations = self.sim.get_sensor_observations()
 
-            # Prepare msgs
-            timestamp = rospy.Time.now()
-            sensor_msgs_header = Header(
-                stamp=timestamp,
-                frame_id=self.sensor_frame_name,
-            )
-
-            rgb = observations["color_sensor"]
-            if rgb.shape[2] > 3:
-                rgb = rgb[:, :, :3]
-            rgb_3rd_person = observations["color_sensor_3rd_person"]
-            if rgb_3rd_person.shape[2] > 3:
-                rgb_3rd_person = rgb_3rd_person[:, :, :3]
-            depth = observations["depth_sensor"]
-
-            rgb_msg = CvBridge().cv2_to_imgmsg(rgb.astype(np.uint8), encoding="bgr8")
-            rgb_msg.header = sensor_msgs_header
-            depth_msg = cv2_to_depthmsg(depth)
-            depth_msg.header = sensor_msgs_header
-            rgb_3rd_person_msg = CvBridge().cv2_to_imgmsg(
-                rgb_3rd_person.astype(np.uint8), encoding="bgr8"
-            )
-            rgb_3rd_person_msg.header = sensor_msgs_header
-            camera_info_msg = make_depth_camera_info_msg(
-                sensor_msgs_header, self.image_height, self.image_width
-            )
-
-            # FIXME: the conversion from wxyz to xyzw quaternion should be
-            # explicitly implemented elsewhere as a conversion func
+            # Get agent pose info
             agent_orientation = quat_habitat_to_ros(
                 np.roll(np.array(self.agent.state.rotation.components), -1),
             )
             agent_translation = vec_habitat_to_ros(self.agent.state.position)
 
-            pose_msg = PoseStamped()
-            pose_msg.header = Header(stamp=timestamp, frame_id=self.agent_frame_name)
-            pose_msg.pose.position = Point(*agent_translation)
-            pose_msg.pose.orientation = Quaternion(*agent_orientation)
+        # Wrap observations into messages
 
-            odom_msg = Odometry()
-            odom_msg.header = Header(stamp=timestamp, frame_id=self.global_frame_name)
-            odom_msg.child_frame_id = self.agent_frame_name
-            odom_msg.pose.pose.position = Point(*agent_translation)
-            odom_msg.pose.pose.orientation = Quaternion(*agent_orientation)
+        # Common header - so that all the observations have the same timestamp
+        sensor_msgs_header = Header(
+            stamp=timestamp,
+            frame_id=self.sensor_frame_name,
+        )
 
-            # Publish observations
-            self.rgb_pub.publish(rgb_msg)
-            self.depth_pub.publish(depth_msg)
-            self.rgb_3rd_person_pub.publish(rgb_3rd_person_msg)
-            self.camera_info_pub.publish(camera_info_msg)
-            self.pose_pub.publish(pose_msg)
-            self.odom_pub.publish(odom_msg)
+        rgb = observations["color_sensor"]
+        if rgb.shape[2] > 3:
+            rgb = rgb[:, :, :3]
+        rgb_msg = self.cv_bridge.cv2_to_imgmsg(rgb.astype(np.uint8), encoding="bgr8")
+        rgb_msg.header = sensor_msgs_header
 
-            self.tf_broadcaster.sendTransform(
-                translation=agent_translation,
-                rotation=agent_orientation,
-                time=timestamp,
-                child=self.agent_frame_name,
-                parent=self.global_frame_name,
-            )
+        rgb_3rd_person = observations["color_sensor_3rd_person"]
+        if rgb_3rd_person.shape[2] > 3:
+            rgb_3rd_person = rgb_3rd_person[:, :, :3]
+        rgb_3rd_person_msg = self.cv_bridge.cv2_to_imgmsg(
+            rgb_3rd_person.astype(np.uint8), encoding="bgr8"
+        )
+        rgb_3rd_person_msg.header = sensor_msgs_header
+
+        depth = observations["depth_sensor"]
+        depth_msg = self.cv2_to_depthmsg(depth)
+        depth_msg.header = sensor_msgs_header
+
+        segmentation = observations["semantic_sensor"]
+        segmentation_msg = self.cv_bridge.cv2_to_imgmsg(segmentation.astype(np.uint16))
+        segmentation_msg.header = sensor_msgs_header
+
+        semantic = self._convert_instance_to_semantic_segmentation(segmentation)
+        semantic_msg = self.cv_bridge.cv2_to_imgmsg(semantic.astype(np.uint16))
+        semantic_msg.header = sensor_msgs_header
+
+        camera_info_msg = make_depth_camera_info_msg(
+            sensor_msgs_header, self.image_height, self.image_width
+        )
+
+        pose_msg = PoseStamped()
+        pose_msg.header = Header(stamp=timestamp, frame_id=self.agent_frame_name)
+        pose_msg.pose.position = Point(*agent_translation)
+        pose_msg.pose.orientation = Quaternion(*agent_orientation)
+
+        odom_msg = Odometry()
+        odom_msg.header = Header(stamp=timestamp, frame_id=self.global_frame_name)
+        odom_msg.child_frame_id = self.agent_frame_name
+        odom_msg.pose.pose.position = Point(*agent_translation)
+        odom_msg.pose.pose.orientation = Quaternion(*agent_orientation)
+
+        # Publish observations
+        self.rgb_pub.publish(rgb_msg)
+        self.depth_pub.publish(depth_msg)
+        self.rgb_3rd_person_pub.publish(rgb_3rd_person_msg)
+        self.camera_info_pub.publish(camera_info_msg)
+        self.segmentation_pub.publish(segmentation_msg)
+        self.semantic_pub.publish(semantic_msg)
+        self.pose_pub.publish(pose_msg)
+        self.odom_pub.publish(odom_msg)
+        self.tf_broadcaster.sendTransform(
+            translation=agent_translation,
+            rotation=agent_orientation,
+            time=timestamp,
+            child=self.agent_frame_name,
+            parent=self.global_frame_name,
+        )
 
     def set_vel_control(self, linear: np.ndarray, angular: np.ndarray):
         with self.sim_lock:
