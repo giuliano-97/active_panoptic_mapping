@@ -19,7 +19,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
 
-from habitat_ros.utils.conversions import (
+from .utils.conversions import (
     numpy_to_vector3,
     vec_habitat_to_ros,
     quat_habitat_to_ros,

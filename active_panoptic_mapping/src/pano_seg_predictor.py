@@ -9,7 +9,7 @@ from std_msgs.msg import Header
 
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 from pano_seg.predictor_factory import PredictorFactory
-from pano_seg.constants import PANOPTIC_LABEL_DIVISOR, NYU40_THING_CLASSES
+from pano_seg.constants import NYU40_IGNORE_LABEL, PANOPTIC_LABEL_DIVISOR, NYU40_THING_CLASSES
 from pano_seg.visualization import colorize_panoptic_segmentation
 
 
@@ -86,7 +86,7 @@ class PanopticSegmentationNode:
 
     def input_image_and_gt_segmentation_cb(
         self,
-        _,  # Keep the input msg for synchronization but not needed
+        input_img_msg: Image,
         gt_instance_seg_msg: Image,
         gt_semantic_seg_msg: Image,
     ):
@@ -97,6 +97,9 @@ class PanopticSegmentationNode:
         segments_info = []
         for id in np.unique(gt_pano_seg):
             category_id = id // PANOPTIC_LABEL_DIVISOR
+            if category_id == NYU40_IGNORE_LABEL:
+                gt_pano_seg[gt_pano_seg == id] = 0
+                continue
             sinfo = {
                 "id": id,
                 "category_id": category_id,
@@ -104,14 +107,18 @@ class PanopticSegmentationNode:
             }
             segments_info.append(sinfo)
 
+        header = Header(stamp=input_img_msg.header.stamp, frame_id="depth_cam")
         pano_seg_msg = self.cv_bridge.cv2_to_imgmsg(gt_pano_seg.astype(np.uint16))
+        pano_seg_msg.header = header
         labels_msg = segments_info_to_labels_msg(segments_info)
+        labels_msg.header = header
         self.pano_seg_pub.publish(pano_seg_msg)
         self.labels_pub.publish(labels_msg)
 
         if self.visualize:
             pano_seg_vis, _ = colorize_panoptic_segmentation(gt_pano_seg)
             pano_seg_vis_msg = self.cv_bridge.cv2_to_imgmsg(pano_seg_vis)
+            pano_seg_msg.header = header
             self.pano_seg_vis_pub.publish(pano_seg_vis_msg)
 
     def input_image_cb(self, img_msg: Image):
