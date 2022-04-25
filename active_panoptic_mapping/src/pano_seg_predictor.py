@@ -1,13 +1,15 @@
 from pathlib import Path
-import queue
 
+import numpy as np
 import rospy
+import message_filters
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 
-from pano_seg.predictor_factory import PredictorFactory
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
+from pano_seg.predictor_factory import PredictorFactory
+from pano_seg.constants import PANOPTIC_LABEL_DIVISOR, NYU40_THING_CLASSES
 
 
 def segments_info_to_labels_msg(segments_info) -> DetectronLabels:
@@ -34,18 +36,42 @@ class PanopticSegmentationNode:
         # Init node
         rospy.init_node("pano_seg_node")
 
-        # Configure input image subscriber
-        self.img_sub = rospy.Subscriber("~input_image", Image, callback=self.predict_cb)
-
         # Load params
         self.visualize = rospy.get_param("~visualize", False)
-        predictor_type = rospy.get_param("~predictor/type")
-        model_dir_path = Path(rospy.get_param("~predictor/model_dir"))
+        self.use_groundtruth = rospy.get_param("~use_groundtruth", False)
+        if self.use_groundtruth:
+            self.input_img_sub = message_filters.Subscriber("~input_image", Image)
+            self.gt_instance_seg_sub = message_filters.Subscriber(
+                "~gt_instance_seg", Image
+            )
+            self.gt_semantic_seg_sub = message_filters.Subscriber(
+                "~gt_semantic_seg", Image
+            )
 
-        # Instantiate predictor
-        self.predictor = PredictorFactory.get_predictor(
-            predictor_type, model_dir_path, self.visualize
-        )
+            self.input_topics_ts = message_filters.TimeSynchronizer(
+                [
+                    self.input_img_sub,
+                    self.gt_instance_seg_sub,
+                    self.gt_semantic_seg_sub,
+                ],
+                queue_size=10,
+            )
+            self.input_topics_ts.registerCallback(
+                self.input_image_and_gt_segmentation_cb
+            )
+
+        else:
+            predictor_type = rospy.get_param("~predictor/type")
+            model_dir_path = Path(rospy.get_param("~predictor/model_dir"))
+
+            # Instantiate predictor
+            self.predictor = PredictorFactory.get_predictor(
+                predictor_type, model_dir_path, self.visualize
+            )
+
+            self.img_sub = rospy.Subscriber(
+                "~input_image", Image, callback=self.input_image_cb
+            )
 
         # Configure pano seg publisher
         self.cv_bridge = CvBridge()
@@ -57,7 +83,34 @@ class PanopticSegmentationNode:
                 "~pano_seg_vis", Image, queue_size=100
             )
 
-    def predict_cb(self, img_msg: Image):
+    def input_image_and_gt_segmentation_cb(
+        self,
+        input_image_msg: Image,
+        gt_instance_seg_msg: Image,
+        gt_semantic_seg_msg: Image,
+    ):
+        gt_instance_seg = self.cv_bridge.imgmsg_to_cv2(gt_instance_seg_msg)
+        gt_semantic_seg = self.cv_bridge.imgmsg_to_cv2(gt_semantic_seg_msg)
+
+        gt_pano_seg = gt_semantic_seg * PANOPTIC_LABEL_DIVISOR + gt_instance_seg
+        segments_info = []
+        for id in np.unique(gt_pano_seg):
+            category_id = id // PANOPTIC_LABEL_DIVISOR
+            sinfo = {
+                "id": id,
+                "category_id": category_id,
+                "isthing": category_id in NYU40_THING_CLASSES,
+            }
+            segments_info.append(sinfo)
+
+        pano_seg_msg = self.cv_bridge.cv2_to_imgmsg(gt_pano_seg.astype(np.uint16))
+        labels_msg = segments_info_to_labels_msg(segments_info)
+        self.pano_seg_pub.publish(pano_seg_msg)
+        self.labels_pub.publish(labels_msg)
+
+        # TODO: implement visualizer as a predictor agnostic component
+
+    def input_image_cb(self, img_msg: Image):
         image = self.cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
 
         predictions = self.predictor(image)
