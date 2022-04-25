@@ -9,7 +9,11 @@ from std_msgs.msg import Header
 
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 from pano_seg.predictor_factory import PredictorFactory
-from pano_seg.constants import NYU40_IGNORE_LABEL, PANOPTIC_LABEL_DIVISOR, NYU40_THING_CLASSES
+from pano_seg.constants import (
+    NYU40_IGNORE_LABEL,
+    PANOPTIC_LABEL_DIVISOR,
+    NYU40_THING_CLASSES,
+)
 from pano_seg.visualization import colorize_panoptic_segmentation
 
 
