@@ -10,6 +10,7 @@ from std_msgs.msg import Header
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 from pano_seg.predictor_factory import PredictorFactory
 from pano_seg.constants import PANOPTIC_LABEL_DIVISOR, NYU40_THING_CLASSES
+from pano_seg.visualization import colorize_panoptic_segmentation
 
 
 def segments_info_to_labels_msg(segments_info) -> DetectronLabels:
@@ -80,12 +81,12 @@ class PanopticSegmentationNode:
 
         if self.visualize:
             self.pano_seg_vis_pub = rospy.Publisher(
-                "~pano_seg_vis", Image, queue_size=100
+                "~pano_seg_vis", Image, queue_size=10
             )
 
     def input_image_and_gt_segmentation_cb(
         self,
-        input_image_msg: Image,
+        _,  # Keep the input msg for synchronization but not needed
         gt_instance_seg_msg: Image,
         gt_semantic_seg_msg: Image,
     ):
@@ -108,7 +109,10 @@ class PanopticSegmentationNode:
         self.pano_seg_pub.publish(pano_seg_msg)
         self.labels_pub.publish(labels_msg)
 
-        # TODO: implement visualizer as a predictor agnostic component
+        if self.visualize:
+            pano_seg_vis, _ = colorize_panoptic_segmentation(gt_pano_seg)
+            pano_seg_vis_msg = self.cv_bridge.cv2_to_imgmsg(pano_seg_vis)
+            self.pano_seg_vis_pub.publish(pano_seg_vis_msg)
 
     def input_image_cb(self, img_msg: Image):
         image = self.cv_bridge.imgmsg_to_cv2(img_msg, desired_encoding="bgr8")
