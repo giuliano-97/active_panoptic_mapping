@@ -25,6 +25,7 @@ class HabitatSimNode:
         self.sim_rate = rospy.get_param("~sim_rate", 60)
         self.control_rate = rospy.get_param("~control_rate", 40)
         self.enable_physics = rospy.get_param("~enable_physics", False)
+        self.use_embodied_agent = rospy.get_param("~use_embodied_agent", False)
         self.wait = rospy.get_param("~wait", True)
 
         self.async_sim = AsyncSimulator(
@@ -34,6 +35,7 @@ class HabitatSimNode:
             sensor_height=self.sensor_height,
             sim_rate=self.sim_rate,
             enable_physics=self.enable_physics,
+            use_embodied_agent=self.use_embodied_agent,
         )
 
         # Configure subscriber for command topics
@@ -54,11 +56,10 @@ class HabitatSimNode:
 
     def simulate(self):
         try:
+            if self.wait:
+                rospy.sleep(10.0)
             # Start the simulator in a separate thread
             self.async_sim.start()
-            if self.wait:
-                rospy.loginfo("Waiting for pano seg predictor node to be ready.")
-                rospy.sleep(10.0)
             _r = rospy.Rate(self.sensor_rate)
             while not rospy.is_shutdown():
                 self.async_sim.publish_sensor_observations_and_odometry()

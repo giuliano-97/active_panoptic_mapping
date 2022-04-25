@@ -208,20 +208,36 @@ class AsyncSimulator(Thread):
 
         # Get the physics object attributes manager
         if use_embodied_agent:
-            # TODO: parameter parsing scattered everywhere is bad
-            robot_config_dir = rospy.get_param("~robot_config_dir")
+            robot_asset_dir = rospy.get_param("~robot_asset_dir", None)
+            # If the asset dir is not none, load the robot asset
+            if robot_asset_dir is not None:
+                obj_templates_mgr = self.sim.get_object_template_manager()
 
-            obj_templates_mgr = self.sim.get_object_template_manager()
+                # Instantiate object
+                # fmt: off
+                locobot_template_id = obj_templates_mgr.load_configs(robot_asset_dir)[0]
+                # fmt: on
 
-            # Instantiate object
-            # FIXME: load urdf with mesh instead
-            # fmt: off
-            locobot_template_id = obj_templates_mgr.load_configs(robot_config_dir)[0]
-            # fmt: on
+                # Instantiate and attach object to agent
+                self.agent_body = self.sim.add_object(
+                    locobot_template_id, self.agent.scene_node
+                )
+            # Otherwise approximate robot as a sphere
+            else:
+                # Get primitive attribute manager
+                prim_attr_mgr = self.sim.get_asset_template_manager()
 
-            self.agent_body = self.sim.add_object(
-                locobot_template_id, self.agent.scene_node
-            )
+                # Get solid icosphere template handle
+                # fmt: off
+                icosphere_template_handle = prim_attr_mgr.get_template_handles("icosphereSolid")[0]
+                # fmt: on
+
+                # Instantiate and attach object to agent
+                rigid_object_manager = self.sim.get_rigid_object_manager()
+                self.agent_body = rigid_object_manager.add_object_by_template_handle(
+                        icosphere_template_handle,  # obj template handle
+                        self.agent.scene_node,  # attachment node
+                    )
 
         # Create velocity control object
         self.vel_control = habitat_sim.physics.VelocityControl()
