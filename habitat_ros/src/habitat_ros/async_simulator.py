@@ -162,7 +162,7 @@ class AsyncSimulator(Thread):
         # Configure publishers to sensor topics
         self.rgb_pub = rospy.Publisher("~rgb", Image, queue_size=100)
         self.depth_pub = rospy.Publisher("~depth", Image, queue_size=100)
-        self.segmentation_pub = rospy.Publisher("~segmentation", Image, queue_size=100)
+        self.instance_pub = rospy.Publisher("~instance", Image, queue_size=100)
         self.semantic_pub = rospy.Publisher("~semantic", Image, queue_size=100)
         # fmt: off
         self.rgb_3rd_person_pub = rospy.Publisher("~rgb_3rd_person", Image, queue_size=100)
@@ -305,11 +305,11 @@ class AsyncSimulator(Thread):
         depth_msg = self.cv2_to_depthmsg(depth)
         depth_msg.header = sensor_msgs_header
 
-        segmentation = observations["semantic_sensor"]
-        segmentation_msg = self.cv_bridge.cv2_to_imgmsg(segmentation.astype(np.uint16))
-        segmentation_msg.header = sensor_msgs_header
+        instance = observations["semantic_sensor"]
+        instance_msg = self.cv_bridge.cv2_to_imgmsg(instance.astype(np.uint16))
+        instance_msg.header = sensor_msgs_header
 
-        semantic = self._convert_instance_to_semantic_segmentation(segmentation)
+        semantic = self._convert_instance_to_semantic_segmentation(instance)
         semantic_msg = self.cv_bridge.cv2_to_imgmsg(semantic.astype(np.uint16))
         semantic_msg.header = sensor_msgs_header
 
@@ -333,7 +333,7 @@ class AsyncSimulator(Thread):
         self.depth_pub.publish(depth_msg)
         self.rgb_3rd_person_pub.publish(rgb_3rd_person_msg)
         self.camera_info_pub.publish(camera_info_msg)
-        self.segmentation_pub.publish(segmentation_msg)
+        self.instance_pub.publish(instance_msg)
         self.semantic_pub.publish(semantic_msg)
         self.pose_pub.publish(pose_msg)
         self.odom_pub.publish(odom_msg)

@@ -12,10 +12,7 @@ from habitat_ros.utils.conversions import (
 
 
 class HabitatSimNode:
-    def __init__(
-        self,
-        node_name: str,
-    ):
+    def __init__(self, node_name: str):
         # Initialize node
         self.node_name = node_name
         rospy.init_node(self.node_name)
@@ -26,7 +23,9 @@ class HabitatSimNode:
         self.image_height = rospy.get_param("~image_height", 240)
         self.sensor_rate = rospy.get_param("~sensor_rate", 30)
         self.sim_rate = rospy.get_param("~sim_rate", 60)
+        self.control_rate = rospy.get_param("~control_rate", 40)
         self.enable_physics = rospy.get_param("~enable_physics", False)
+        self.wait = rospy.get_param("~wait", True)
 
         self.async_sim = AsyncSimulator(
             scene_file_path=self.scene_file_path,
@@ -57,9 +56,9 @@ class HabitatSimNode:
         try:
             # Start the simulator in a separate thread
             self.async_sim.start()
-            # FIXME: hack to make sure the predictor has come alive before start publishing
-            rospy.loginfo("Waiting for pano seg predictor node to be ready.")
-            # rospy.sleep(10.0)
+            if self.wait:
+                rospy.loginfo("Waiting for pano seg predictor node to be ready.")
+                rospy.sleep(10.0)
             _r = rospy.Rate(self.sensor_rate)
             while not rospy.is_shutdown():
                 self.async_sim.publish_sensor_observations_and_odometry()
