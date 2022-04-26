@@ -1,5 +1,5 @@
 import numpy as np
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3, Quaternion
 
 
 def vector3_to_numpy(msg: Vector3) -> np.ndarray:
@@ -8,6 +8,10 @@ def vector3_to_numpy(msg: Vector3) -> np.ndarray:
 
 def numpy_to_vector3(arr: np.ndarray) -> Vector3:
     return Vector3(*arr)
+
+
+def quaternion_to_numpy(msg: Quaternion) -> np.ndarray:
+    return np.array([msg.x, msg.y, msg.z, msg.w])
 
 
 def vec_ros_to_habitat(vec: np.ndarray) -> np.ndarray:
@@ -22,7 +26,7 @@ def vec_habitat_to_ros(vec: np.ndarray) -> np.ndarray:
 
 
 def quat_ros_to_habitat(quat: np.ndarray) -> np.ndarray:
-    raise np.array([-quat[1], quat[2], -quat[0], quat[3]])
+    return np.array([-quat[1], quat[2], -quat[0], quat[3]])
 
 
 def quat_habitat_to_ros(quat: np.ndarray) -> np.ndarray:
