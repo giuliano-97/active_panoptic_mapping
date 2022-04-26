@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from dataclasses import dataclass
+from queue import Queue
 from threading import Thread, Lock
 
 import cv2
@@ -20,7 +22,7 @@ from geometry_msgs.msg import (
 )
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
-from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
+from trajectory_msgs.msg import MultiDOFJointTrajectory
 
 from habitat_ros.async_simulator import AsyncSimulator
 from habitat_ros.pid_position_controller import (
@@ -68,6 +70,13 @@ def convert_instance_to_semantic_segmentation(segmentation, instance_id_to_class
     )[inv].reshape(segmentation.shape)
 
 
+@dataclass
+class Waypoint:
+    position: np.ndarray = np.zeros((3,))
+    yaw: float = 0.0
+    is_goal: bool = False
+
+
 class HabitatSimNode:
     def __init__(self, node_name: str):
         # Initialize node
@@ -85,7 +94,7 @@ class HabitatSimNode:
         self.use_embodied_agent = rospy.get_param("~use_embodied_agent", False)
         self.wait = rospy.get_param("~wait", True)
 
-        self.waypoints = []
+        self.waypoints = Queue()
 
         self.async_sim = AsyncSimulator(
             scene_file_path=self.scene_file_path,
@@ -155,6 +164,13 @@ class HabitatSimNode:
             queue_size=10,
         )
 
+        self.cmd_trajectory_sub = rospy.Subscriber(
+            "cmd_trajectory",
+            MultiDOFJointTrajectory,
+            self.cmd_trajectory_callback,
+            queue_size=10,
+        )
+
     def cmd_vel_callback(self, cmd_vel_msg: Twist):
         # Convert from ros to habitat coordinate convention
         linear_vel = vec_ros_to_habitat(vector3_to_numpy(cmd_vel_msg.linear))
@@ -171,6 +187,16 @@ class HabitatSimNode:
 
         with self.position_controller_lock:
             self.position_controller.set_target(target_position, target_yaw)
+
+    def cmd_trajectory_callback(self, trajectory_msg: MultiDOFJointTrajectory):
+        # Add waypoints to internal waypoints queue
+        for point in trajectory_msg.points:
+            for transform in point.transforms:
+                position = vector3_to_numpy(transform.translation)
+                orientation = quaternion_to_numpy(transform.rotation)
+                yaw = tf.transformations.euler_from_quaternion(orientation)[2]
+                waypoint = Waypoint(position, yaw, False)
+                self.waypoints.put(waypoint)
 
     def _publish_odometry_and_sensor_observations(self):
         (
@@ -275,6 +301,12 @@ class HabitatSimNode:
 
                     duration = 1 / self.control_rate
                     self.async_sim.set_vel_control(linear_vel, angular_vel, duration)
+                elif not self.position_controller.is_target_set():
+                    if not self.waypoints.empty():
+                        next_waypoint = self.waypoints.get()
+                        self.position_controller.set_target(
+                            next_waypoint.position, next_waypoint.yaw
+                        )
 
             _r.sleep()
 

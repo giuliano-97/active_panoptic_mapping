@@ -56,6 +56,9 @@ class PIDPositionController:
         self.target_position = XYZYaw(xyz, wrap(yaw))
         self._reset_errors()
 
+    def is_target_set(self) -> bool:
+        return self.target_position is not None
+
     def is_goal_reached(self) -> bool:
         if self.target_position is None:
             return True
