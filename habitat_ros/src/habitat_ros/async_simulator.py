@@ -1,5 +1,5 @@
-from re import S
 from threading import Thread, Lock
+from typing import Optional
 
 from cv_bridge import CvBridge
 import habitat_sim
@@ -235,9 +235,9 @@ class AsyncSimulator(Thread):
                 # Instantiate and attach object to agent
                 rigid_object_manager = self.sim.get_rigid_object_manager()
                 self.agent_body = rigid_object_manager.add_object_by_template_handle(
-                        icosphere_template_handle,  # obj template handle
-                        self.agent.scene_node,  # attachment node
-                    )
+                    icosphere_template_handle,  # obj template handle
+                    self.agent.scene_node,  # attachment node
+                )
 
         # Create velocity control object
         self.vel_control = habitat_sim.physics.VelocityControl()
@@ -245,6 +245,8 @@ class AsyncSimulator(Thread):
         self.vel_control.controlling_ang_vel = True
         self.vel_control.lin_vel_is_local = True
         self.vel_control.ang_vel_is_local = True
+        self.vel_control_requested_duration = None
+        self.vel_control_duration = 0.0
 
         # Cache instance to class ids mapping
         self.instance_id_to_class_id = get_instance_id_to_category_id_map(
@@ -254,6 +256,12 @@ class AsyncSimulator(Thread):
         # Simulator lock to avoid reading sensor data or updating
         # the velocity command while the simulation is being stepped
         self.sim_lock = Lock()
+
+    def _reset_vel_control(self):
+        self.vel_control.linear_velocity = magnum.Vector3.zero_init()
+        self.vel_control.angular_velocity = magnum.Vector3.zero_init()
+        self.vel_control_requested_duration = None
+        self.vel_control_duration = 0.0
 
     def cv2_to_depthmsg(self, depth_img: np.ndarray) -> Image:
         r"""
@@ -361,12 +369,20 @@ class AsyncSimulator(Thread):
             parent=self.global_frame_name,
         )
 
-    def set_vel_control(self, linear: np.ndarray, angular: np.ndarray):
+    def set_vel_control(
+        self,
+        linear: np.ndarray,
+        angular: np.ndarray,
+        duration: Optional[float] = None,
+    ):
         with self.sim_lock:
 
             self.vel_control.linear_velocity = magnum.Vector3(linear)
 
             self.vel_control.angular_velocity = magnum.Vector3(angular)
+
+            self.vel_control_requested_duration = duration
+            self.vel_control_duration = 0.0
 
     def _step(self):
         with self.sim_lock:
@@ -380,6 +396,11 @@ class AsyncSimulator(Thread):
                 self.time_step,
                 cur_agent_pose,
             )
+            
+            if self.vel_control_requested_duration is not None:
+                self.vel_control_duration += self.time_step
+                if self.vel_control_duration >= self.vel_control_requested_duration:
+                    self._reset_vel_control()
 
             # FIXME: no collision checking implemented!
             # If the agent is embodied, collision checks should be done using

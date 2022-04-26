@@ -3,6 +3,7 @@
 
 import rospy
 from geometry_msgs.msg import Twist
+from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 
 from habitat_ros.async_simulator import AsyncSimulator
 from habitat_ros.utils.conversions import (
@@ -28,6 +29,8 @@ class HabitatSimNode:
         self.use_embodied_agent = rospy.get_param("~use_embodied_agent", False)
         self.wait = rospy.get_param("~wait", True)
 
+        self.waypoints = []
+
         self.async_sim = AsyncSimulator(
             scene_file_path=self.scene_file_path,
             image_width=self.image_width,
@@ -52,7 +55,8 @@ class HabitatSimNode:
         angular_vel = vec_ros_to_habitat(vector3_to_numpy(cmd_vel_msg.angular))
 
         # Set velocity control command
-        self.async_sim.set_vel_control(linear_vel, angular_vel)
+        duration = 1 / self.control_rate
+        self.async_sim.set_vel_control(linear_vel, angular_vel, duration)
 
     def simulate(self):
         try:
