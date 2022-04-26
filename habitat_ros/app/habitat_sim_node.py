@@ -94,7 +94,7 @@ class HabitatSimNode:
         self.use_embodied_agent = rospy.get_param("~use_embodied_agent", False)
         self.wait = rospy.get_param("~wait", True)
 
-        self.waypoints = Queue()
+        self.waypoints = []
 
         self.async_sim = AsyncSimulator(
             scene_file_path=self.scene_file_path,
@@ -151,21 +151,21 @@ class HabitatSimNode:
 
         # Configure subscriber for command topics
         self.cmd_vel_sub = rospy.Subscriber(
-            "cmd_vel",
+            "~cmd_vel",
             Twist,
             self.cmd_vel_callback,
             queue_size=10,
         )
 
         self.cmd_pose_sub = rospy.Subscriber(
-            "cmd_pose",
+            "~cmd_pose",
             Pose,
             self.cmd_pose_callback,
             queue_size=10,
         )
 
         self.cmd_trajectory_sub = rospy.Subscriber(
-            "cmd_trajectory",
+            "~cmd_trajectory",
             MultiDOFJointTrajectory,
             self.cmd_trajectory_callback,
             queue_size=10,
