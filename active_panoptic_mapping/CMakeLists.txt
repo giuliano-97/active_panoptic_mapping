@@ -82,7 +82,7 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  src/pano_seg_predictor.py
+  app/pano_seg_predictor.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
