@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -40,7 +40,7 @@ class PIDPositionController:
         self.params = params
         self.kp_xyz = np.array([params.kp_x, params.kp_y, params.kp_z])
         self.kd_xyz = np.array([params.kd_x, params.kd_y, params.kd_z])
-        self.target_position = XYZYaw()
+        self.target_position = None
         self.curr_position = XYZYaw()
         self.cmd_vel = Twist()
         self.prev_error = XYZYaw()
@@ -53,17 +53,25 @@ class PIDPositionController:
         self.curr_error.yaw = 0.0
 
     def set_target(self, xyz: np.ndarray, yaw: float):
-        self.target_position.xyz = xyz
-        self.target_position.yaw = wrap(yaw)
+        self.target_position = XYZYaw(xyz, wrap(yaw))
         self._reset_errors()
 
     def is_goal_reached(self) -> bool:
+        if self.target_position is None:
+            return True
+
         dist_xyz = np.linalg.norm(self.target_position.xyz - self.curr_position.xyz)
         dist_yaw = wrap(self.target_position.yaw - self.curr_position.yaw)
 
-        return dist_xyz < self.params.reached_thresh_xyz and dist_yaw < np.radians(
-            self.params.reached_thresh_yaw_degrees
+        is_reached = (
+            dist_xyz < self.params.reached_thresh_xyz
+            and dist_yaw < np.radians(self.params.reached_thresh_yaw_degrees)
         )
+
+        if is_reached:
+            self.target_position = None
+
+        return is_reached
 
     def _clip_control_cmd(self, linear_vel: np.ndarray, yaw_rate: float) -> np.ndarray:
         horz_speed = np.linalg.norm(linear_vel[:2])
@@ -71,17 +79,20 @@ class PIDPositionController:
             linear_vel[:2] = (linear_vel[:2] / horz_speed) * self.params.max_horz_speed
 
         linear_vel[2] = np.sign(linear_vel[2]) * min(
-            linear_vel[2], self.params.max_vert_speed
+            abs(linear_vel[2]), self.params.max_vert_speed
         )
 
         yaw_rate = np.sign(yaw_rate) * min(
-            yaw_rate, np.radians(self.params.max_yaw_rate_degrees)
+            abs(yaw_rate), np.radians(self.params.max_yaw_rate_degrees)
         )
         return linear_vel, yaw_rate
 
     def compute_control_cmd(
         self, curr_xyz: np.ndarray, curr_yaw: float
-    ) -> Tuple[np.ndarray, float]:
+    ) -> Optional[Tuple[np.ndarray, float]]:
+        if self.target_position is None:
+            return None
+
         # Update the current position
         self.curr_position.xyz = curr_xyz.copy()
         self.curr_position.yaw = wrap(curr_yaw)

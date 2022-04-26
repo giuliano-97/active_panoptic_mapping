@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from threading import Thread
+from threading import Thread, Lock
 
 import cv2
 import numpy as np
@@ -34,6 +34,7 @@ from habitat_ros.utils.conversions import (
     vec_ros_to_habitat,
     quaternion_to_numpy,
     quat_ros_to_habitat,
+    quat_habitat_to_ros,
 )
 
 
@@ -96,18 +97,20 @@ class HabitatSimNode:
             use_embodied_agent=self.use_embodied_agent,
         )
 
+        # Instantiate and configure position controller to track pose commands
+        # TODO: read pid controller params from ros
+        self.position_controller = PIDPositionController(
+            PIDPositionControllerParameters()
+        )
+        self.position_controller_thread = Thread(target=self._run_position_controller)
+        self.position_controller_lock = Lock()
+
         # TODO: make these configurable or read from rosparam server
         self.global_frame_name = "world"
         self.agent_frame_name = "base_link"
         self.sensor_frame_name = "depth_cam"
 
         self.cv_bridge = CvBridge()
-
-        # Instantiate and configure position controller to track pose commands
-        # TODO: read pid controller params from ros
-        self.position_controller = PIDPositionController(
-            PIDPositionControllerParameters()
-        )
 
         # Configure publishers to sensor topics
         self.rgb_pub = rospy.Publisher("~rgb", Image, queue_size=100)
@@ -152,20 +155,6 @@ class HabitatSimNode:
             queue_size=10,
         )
 
-    def cv2_to_depthmsg(self, depth_img: np.ndarray) -> Image:
-        r"""
-        Converts a Habitat depth image to a ROS Image message.
-        """
-        if len(depth_img.shape) > 2:
-            depth_img_in_m = np.squeeze(depth_img, axis=2)
-        else:
-            depth_img_in_m = depth_img
-        depth_msg = self.cv_bridge.cv2_to_imgmsg(
-            depth_img_in_m.astype(np.float32),
-            encoding="passthrough",
-        )
-        return depth_msg
-
     def cmd_vel_callback(self, cmd_vel_msg: Twist):
         # Convert from ros to habitat coordinate convention
         linear_vel = vec_ros_to_habitat(vector3_to_numpy(cmd_vel_msg.linear))
@@ -176,15 +165,12 @@ class HabitatSimNode:
         self.async_sim.set_vel_control(linear_vel, angular_vel, duration)
 
     def cmd_pose_callback(self, pose_msg: Pose):
-        target_position = vec_ros_to_habitat(vector3_to_numpy(pose_msg.position))
-
-        target_orientation = quat_ros_to_habitat(
-            quaternion_to_numpy(pose_msg.orientation)
-        )
+        target_position = vector3_to_numpy(pose_msg.position)
+        target_orientation = quaternion_to_numpy(pose_msg.orientation)
         target_yaw = tf.transformations.euler_from_quaternion(target_orientation)[2]
 
-        # FIXME: not thread safe?
-        self.position_controller.set_target(target_position, target_yaw)
+        with self.position_controller_lock:
+            self.position_controller.set_target(target_position, target_yaw)
 
     def _publish_odometry_and_sensor_observations(self):
         (
@@ -192,6 +178,10 @@ class HabitatSimNode:
             orientation,
             observations,
         ) = self.async_sim.get_agent_pose_and_sensor_observations()
+
+        # Convert position and orientation to the ROS coordinate convention
+        position = vec_habitat_to_ros(position)
+        orientation = quat_habitat_to_ros(orientation)
 
         # Wrap observations into messages
 
@@ -217,7 +207,10 @@ class HabitatSimNode:
         rgb_3rd_person_msg.header = sensor_msgs_header
 
         depth = observations["depth_sensor"]
-        depth_msg = self.cv2_to_depthmsg(depth)
+        depth_msg = self.cv_bridge.cv2_to_imgmsg(
+            depth.astype(np.float32),
+            encoding="passthrough",
+        )
         depth_msg.header = sensor_msgs_header
 
         instance = observations["semantic_sensor"]
@@ -258,11 +251,39 @@ class HabitatSimNode:
             parent=self.global_frame_name,
         )
 
+    def _run_position_controller(self):
+        _r = rospy.Rate(self.control_rate)
+        while not rospy.is_shutdown():
+            # Get current agent pose
+            with self.position_controller_lock:
+                if not self.position_controller.is_goal_reached():
+                    position, orientation = self.async_sim.get_agent_pose()
+                    position_ros = vec_habitat_to_ros(position)
+                    orientation_ros = quat_habitat_to_ros(orientation)
+                    # fmt: off
+                    yaw_ros = tf.transformations.euler_from_quaternion(orientation_ros)[2]
+                    # fmt: on
+
+                    (
+                        linear_vel_ros,
+                        yaw_rate_ros,
+                    ) = self.position_controller.compute_control_cmd(
+                        position_ros, yaw_ros
+                    )
+                    linear_vel = vec_ros_to_habitat(linear_vel_ros)
+                    angular_vel = vec_ros_to_habitat(np.array([0, 0, yaw_rate_ros]))
+
+                    duration = 1 / self.control_rate
+                    self.async_sim.set_vel_control(linear_vel, angular_vel, duration)
+
+            _r.sleep()
+
     def _start_simulator_and_controller_threads(self):
-        # Start simulator on a separate thread
+        # Start simulator thread
         self.async_sim.start()
 
-        # TODO: start controller thread
+        # Start position controller thread
+        self.position_controller_thread.start()
 
     def run(self):
         r"""
