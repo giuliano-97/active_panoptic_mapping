@@ -7,7 +7,7 @@ import numpy as np
 import quaternion
 import rospy
 
-from .utils.conversions import REPLICA_CLASS_ID_TO_NYU40
+from habitat_ros.utils import REPLICA_CLASS_ID_TO_NYU40
 
 
 def make_agent_cfg(image_width: int, image_height: int, sensor_height: float):

@@ -29,7 +29,7 @@ from habitat_ros.pid_position_controller import (
     PIDPositionController,
     PIDPositionControllerParameters,
 )
-from habitat_ros.utils.conversions import (
+from habitat_ros.utils import (
     numpy_to_vector3,
     vector3_to_numpy,
     vec_habitat_to_ros,
