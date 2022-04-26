@@ -2,13 +2,20 @@
 
 
 import rospy
-from geometry_msgs.msg import Twist
+import tf
+from geometry_msgs.msg import Twist, Pose
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 
 from habitat_ros.async_simulator import AsyncSimulator
+from habitat_ros.pid_position_controller import (
+    PIDPositionController,
+    PIDPositionControllerParameters,
+)
 from habitat_ros.utils.conversions import (
     vector3_to_numpy,
     vec_ros_to_habitat,
+    quaternion_to_numpy,
+    quat_ros_to_habitat,
 )
 
 
@@ -41,12 +48,26 @@ class HabitatSimNode:
             use_embodied_agent=self.use_embodied_agent,
         )
 
+        # Instantiate and configure position controller to track pose
+        # and trajectory commands
+        # TODO: read pid controller params from ros
+        self.position_controller = PIDPositionController(
+            PIDPositionControllerParameters()
+        )
+
         # Configure subscriber for command topics
         self.cmd_vel_sub = rospy.Subscriber(
             "cmd_vel",
             Twist,
             self.cmd_vel_callback,
-            queue_size=100,
+            queue_size=10,
+        )
+
+        self.cmd_pose_sub = rospy.Subscriber(
+            "cmd_pose",
+            Pose,
+            self.cmd_pose_callback,
+            queue_size=10,
         )
 
     def cmd_vel_callback(self, cmd_vel_msg: Twist):
@@ -57,6 +78,17 @@ class HabitatSimNode:
         # Set velocity control command
         duration = 1 / self.control_rate
         self.async_sim.set_vel_control(linear_vel, angular_vel, duration)
+
+    def cmd_pose_callback(self, pose_msg: Pose):
+        target_position = vec_ros_to_habitat(vector3_to_numpy(pose_msg.position))
+
+        target_orientation = quat_ros_to_habitat(
+            quaternion_to_numpy(pose_msg.orientation)
+        )
+        target_yaw = tf.transformations.euler_from_quaternion(target_orientation)[2]
+
+        # FIXME: not thread safe?
+        self.position_controller.set_target(target_position, target_yaw)
 
     def simulate(self):
         try:
