@@ -1,0 +1,31 @@
+environment:
+  scene_file: /media/giuliano/wd_ssd/datasets/replica/apartment_0/habitat/mesh_semantic.ply
+  enable_physics: false
+  sim_rate: 60
+  observations_pub_rate: 3
+  control_rate: 40
+
+agent:
+  embodied: true
+  initial_position:
+    x: 0.0
+    y: -1.0
+    z: 0.0
+  sensor_height: 0
+  image_width: 640
+  image_height: 480
+
+position_controller:
+  kp_x: 0.5
+  kp_y: 0.5
+  kp_z: 0.10
+  kp_yaw: 0.4
+  kd_x: 0.3
+  kd_y: 0.3
+  kd_z: 0.2
+  kd_yaw: 0.1
+  max_horz_speed: 1.0
+  max_vert_speed: 0.5
+  max_yaw_rate_degrees: 10.0
+  reached_thresh_xyz: 0.1
+  reached_thresh_yaw_degrees: 0.1

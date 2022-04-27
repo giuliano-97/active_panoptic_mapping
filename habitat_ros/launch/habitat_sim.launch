@@ -2,11 +2,8 @@
 
     
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
-        <rosparam file="$(find habitat_ros)/config/rgbd.yaml" command="load" />
-        <param name="scene_file" value="/media/giuliano/wd_ssd/datasets/habitat_test_data/habitat_test_scenes/versioned_data/habitat_test_scenes_1.0/apartment_1.glb" />
-        <!-- <param name="scene_file" value="/media/giuliano/wd_ssd/datasets/replica/apartment_0/habitat/mesh_semantic.ply" /> -->
-        <param name="enable_physics" value="true"/>
+        <rosparam file="$(find habitat_ros)/config/default.yaml" command="load" />
     </node>
 
-    <node pkg="rviz" name="rviz" type="rviz" output="screen" args="-d $(find habitat_ros)/rviz/devel.rviz"/>
+    <node pkg="rviz" name="rviz" type="rviz" output="screen" args="-d $(find habitat_ros)/rviz/test.rviz"/>
 </launch>

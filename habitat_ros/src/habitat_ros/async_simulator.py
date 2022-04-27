@@ -93,6 +93,7 @@ class AsyncSimulator(Thread):
         image_height: int,
         sensor_height: float,
         sim_rate: float,
+        initial_position: np.ndarray = np.zeros((3,)),
         enable_physics: bool = False,
         use_embodied_agent: bool = False,
         # TODO: there should be a better way to infer the dataset
@@ -127,11 +128,12 @@ class AsyncSimulator(Thread):
         # Init agent
         self.agent = self.sim.initialize_agent(
             agent_id=0,
-            initial_state=habitat_sim.AgentState(position=np.array([0.0, 0.0, 0.0])),
+            initial_state=habitat_sim.AgentState(position=initial_position),
         )
 
         # Get the physics object attributes manager
         if use_embodied_agent:
+            # TODO: refactor and pass this as a config param
             robot_asset_dir = rospy.get_param("~robot_asset_dir", None)
             # If the asset dir is not none, load the robot asset
             if robot_asset_dir is not None:

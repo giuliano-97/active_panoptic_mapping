@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from dataclasses import dataclass
+import dataclasses
 from queue import Queue
 from threading import Thread, Lock
 
@@ -35,7 +35,6 @@ from habitat_ros.utils import (
     vec_habitat_to_ros,
     vec_ros_to_habitat,
     quaternion_to_numpy,
-    quat_ros_to_habitat,
     quat_habitat_to_ros,
 )
 
@@ -70,11 +69,32 @@ def convert_instance_to_semantic_segmentation(segmentation, instance_id_to_class
     )[inv].reshape(segmentation.shape)
 
 
-@dataclass
+@dataclasses.dataclass
 class Waypoint:
     position: np.ndarray = np.zeros((3,))
     yaw: float = 0.0
     is_goal: bool = False
+
+
+def read_position_controller_params_from_ros() -> PIDPositionControllerParameters:
+    params = PIDPositionControllerParameters()
+    namespace = "~position_controller/"
+
+    params_value_dict = dict()
+    for field in dataclasses.fields(PIDPositionControllerParameters):
+        value = rospy.get_param(namespace + field.name, None)
+        if value is not None:
+            params_value_dict[field.name] = value
+
+    return dataclasses.replace(params, **params_value_dict)
+
+
+def read_position_from_ros(namespace: str) -> np.ndarray:
+    namespace = namespace.rstrip("/") + "/"
+    x = rospy.get_param(namespace + "x", 0.0)
+    y = rospy.get_param(namespace + "y", 0.0)
+    z = rospy.get_param(namespace + "z", 0.0)
+    return np.array([x, y, z])
 
 
 class HabitatSimNode:
@@ -83,16 +103,21 @@ class HabitatSimNode:
         self.node_name = node_name
         rospy.init_node(self.node_name)
 
-        self.scene_file_path = rospy.get_param("~scene_file", None)
-        self.sensor_height = rospy.get_param("~sensor_height", None)
-        self.image_width = rospy.get_param("~image_width", 320)
-        self.image_height = rospy.get_param("~image_height", 240)
-        self.sensor_rate = rospy.get_param("~sensor_rate", 30)
-        self.sim_rate = rospy.get_param("~sim_rate", 60)
-        self.control_rate = rospy.get_param("~control_rate", 40)
-        self.enable_physics = rospy.get_param("~enable_physics", False)
-        self.use_embodied_agent = rospy.get_param("~use_embodied_agent", False)
-        self.wait = rospy.get_param("~wait", True)
+        # Read environment params
+        self.sim_rate = rospy.get_param("~environment/sim_rate", 60)
+        self.sensor_rate = rospy.get_param("~environment/sensor_rate", 30)
+        self.control_rate = rospy.get_param("~environment/control_rate", 40)
+        self.scene_file_path = rospy.get_param("~environment/scene_file", None)
+        self.enable_physics = rospy.get_param("~environment/enable_physics", False)
+
+        # Read agent params
+        self.sensor_height = rospy.get_param("~agent/sensor_height", 0.0)
+        self.image_width = rospy.get_param("~agent/image_width", 320)
+        self.image_height = rospy.get_param("~agent/image_height", 240)
+        self.use_embodied_agent = rospy.get_param("~agent/embodied", False)
+        self.initial_position = read_position_from_ros("~agent/initial_position")
+
+        self.wait = rospy.get_param("~wait", False)
 
         self.waypoints = []
 
@@ -102,15 +127,14 @@ class HabitatSimNode:
             image_height=self.image_height,
             sensor_height=self.sensor_height,
             sim_rate=self.sim_rate,
+            initial_position=vec_ros_to_habitat(self.initial_position),
             enable_physics=self.enable_physics,
             use_embodied_agent=self.use_embodied_agent,
         )
 
         # Instantiate and configure position controller to track pose commands
-        # TODO: read pid controller params from ros
-        self.position_controller = PIDPositionController(
-            PIDPositionControllerParameters()
-        )
+        position_controller_params = read_position_controller_params_from_ros()
+        self.position_controller = PIDPositionController(position_controller_params)
         self.position_controller_thread = Thread(target=self._run_position_controller)
         self.position_controller_lock = Lock()
 
