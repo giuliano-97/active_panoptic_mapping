@@ -1,0 +1,22 @@
+scene_file: /media/giuliano/wd_ssd/datasets/replica/apartment_0/habitat/mesh_semantic.ply
+
+initial_position:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+
+map_bounding_volume:
+  x_min: -10
+  x_max: 10
+  y_min: -10
+  y_max: 10
+  z_min: -2
+  z_max: 2
+
+target_bounding_volume:
+  x_min: -11
+  x_max: 11
+  y_min: -11
+  y_max: 11
+  z_min: -2
+  z_max: 2
