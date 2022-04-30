@@ -36,11 +36,15 @@
     local-name: catkin_grpc
     uri: git@github.com:CogRob/catkin_grpc.git
 
-# Package Dependencies. Notice that voxblox requires a special branch.
+# Package Dependencies.
+
+# Special branch for active panoptic mapping
 - git:
     local-name: panoptic_mapping
     uri: git@github.com:ethz-asl/panoptic_mapping.git
     version: devel/active-panoptic-mapping
+
+# Special voxblox branch required for panoptic mapping
 - git:
     local-name: voxblox
     uri: git@github.com:ethz-asl/voxblox.git
@@ -48,4 +52,8 @@
 - git:
     local-name: cblox
     uri: git@github.com:ethz-asl/cblox.git
+
+- git:
+    local-name: mav_active_3d_planning
+    uri: git@github.com:ethz-asl/mav_active_3d_planning.git
 
