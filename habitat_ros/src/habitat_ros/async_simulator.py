@@ -169,7 +169,7 @@ class AsyncSimulator(Thread):
         self.vel_control = habitat_sim.physics.VelocityControl()
         self.vel_control.controlling_lin_vel = True
         self.vel_control.controlling_ang_vel = True
-        self.vel_control.lin_vel_is_local = True
+        self.vel_control.lin_vel_is_local = False
         self.vel_control.ang_vel_is_local = True
         self.vel_control_requested_duration = None
         self.vel_control_duration = 0.0

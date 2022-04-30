@@ -103,19 +103,21 @@ class HabitatSimNode:
         self.node_name = node_name
         rospy.init_node(self.node_name)
 
+        # Global parameters
+        self.scene_file_path = rospy.get_param("/scene_file", None)
+        self.initial_position = read_position_from_ros("/initial_position")
+
         # Read environment params
-        self.sim_rate = rospy.get_param("~environment/sim_rate", 60)
-        self.sensor_rate = rospy.get_param("~environment/sensor_rate", 30)
-        self.control_rate = rospy.get_param("~environment/control_rate", 40)
-        self.scene_file_path = rospy.get_param("~environment/scene_file", None)
-        self.enable_physics = rospy.get_param("~environment/enable_physics", False)
+        self.sim_rate = rospy.get_param("~simulator/sim_rate", 60)
+        self.sensor_rate = rospy.get_param("~simulator/sensor_rate", 3)
+        self.control_rate = rospy.get_param("~simulator/control_rate", 40)
+        self.enable_physics = rospy.get_param("simulator/enable_physics", False)
 
         # Read agent params
         self.sensor_height = rospy.get_param("~agent/sensor_height", 0.0)
         self.image_width = rospy.get_param("~agent/image_width", 320)
         self.image_height = rospy.get_param("~agent/image_height", 240)
         self.use_embodied_agent = rospy.get_param("~agent/embodied", False)
-        self.initial_position = read_position_from_ros("~agent/initial_position")
 
         self.wait = rospy.get_param("~wait", False)
 
@@ -140,6 +142,7 @@ class HabitatSimNode:
 
         # TODO: make these configurable or read from rosparam server
         self.global_frame_name = "world"
+        self.odom_frame_name = "odom"
         self.agent_frame_name = "base_link"
         self.sensor_frame_name = "depth_cam"
 
@@ -280,7 +283,7 @@ class HabitatSimNode:
         pose_msg.pose.orientation = Quaternion(*orientation)
 
         odom_msg = Odometry()
-        odom_msg.header = Header(stamp=timestamp, frame_id=self.global_frame_name)
+        odom_msg.header = Header(stamp=timestamp, frame_id=self.odom_frame_name)
         odom_msg.child_frame_id = self.agent_frame_name
         odom_msg.pose.pose.position = Point(*position)
         odom_msg.pose.pose.orientation = Quaternion(*orientation)
@@ -298,7 +301,7 @@ class HabitatSimNode:
             rotation=orientation,
             time=timestamp,
             child=self.agent_frame_name,
-            parent=self.global_frame_name,
+            parent=self.odom_frame_name,
         )
 
     def _run_position_controller(self):

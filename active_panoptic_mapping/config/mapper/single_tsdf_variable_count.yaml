@@ -1,5 +1,5 @@
 # General Params
-verbosity: 3
+verbosity: 2
 is_single_tsdf: true
 single_tsdf_tracked_instance_type: 0
 use_threadsafe_submap_collection: true
@@ -10,20 +10,20 @@ visualization_interval: -1.0
 data_logging_interval: -1.0
 print_timing_interval: 0.0
 max_input_queue_length: 1000
-ros_spinning_threads: 4
+ros_spinning_threads: 8
 
 labels:
   type: csv
-  file_name: /media/scratch1/albanesg/scans/nyu40_detectron_labels.csv
+  file_name: /media/giuliano/wd_ssd/datasets/scannetv2/nyu40_detectron_labels.csv
 
 camera:
   verbosity: 1
-  width: 640  # Px
-  height: 480
-  vx: 320
-  vy: 240
-  fx: 320
-  fy: 320
+  width: 320  # Px
+  height: 240
+  vx: 160
+  vy: 120
+  fx: 160
+  fy: 120
   max_range: 5  # m
   min_range: 0.1
 
@@ -32,7 +32,7 @@ id_tracker:
   verbosity: 4
 
   # Single TSDF tracker params
-  voxel_size: 0.05
+  voxel_size: 0.07
   truncation_distance: -2
   voxels_per_side: 16
   use_class_layer: true
@@ -114,5 +114,5 @@ data_writer:
   verbosity: 1
   store_map_every_n_frames: 25
   log_data_writer:
-    output_directory: /media/scratch1/runs/replica/room_2
+    output_directory: /media/giuliano/wd_ssd/runs/replica/room_2
     

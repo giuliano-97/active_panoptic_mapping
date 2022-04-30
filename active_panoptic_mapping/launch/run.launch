@@ -1,33 +1,73 @@
 <launch>
-
+    <!-- General arguments -->
     <arg name="namespace" default="active_panoptic_mapping"/>
-    <arg name="visualize" default="false"/> 
+    <arg name="visualize" default="true"/> 
+    <arg name="record" default="false"/>
 
-    <!-- Panoptic segmentation predictor -->
+    <!-- Habitat environment config -->
+    <arg name="habitat_config" default="habitat/replica_embodied.yaml"/>
+    <arg name="environment_config" default="habitat/environments/replica_room_2.yaml" />
+
+    <!-- Mapper config -->
+    <arg name="mapper_config" default="mapper/single_tsdf_variable_count.yaml"/>
+
+    <!-- Planner config -->
+    <arg name="planner_config" default="planner/active_panoptic_mapping_planner.yaml"/>
+
+    <!-- Load environment params in global namespace -->
+    <rosparam file="$(find active_panoptic_mapping)/config/$(arg environment_config)" command="load"/>
+    
+    <!-- Habitat client node -->
+    <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
+        <!-- Config -->
+        <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
+        <param name="~wait" value="true"/>
+
+        <!-- Topics -->
+        <remap from="~rgb" to="$(arg namespace)/color_image"/>
+        <remap from="~depth" to="$(arg namespace)/depth_image"/>
+        <remap from="~instance" to="$(arg namespace)/gt_instance_seg"/>
+        <remap from="~semantic" to="$(arg namespace)/gt_semantic_seg"/>
+        <remap from="~pose" to="$(arg namespace)/pose"/>
+        <remap from="~cmd_trajectory" to="$(arg namespace)/command/trajectory"/>
+        <remap from="~odom" to="$(arg namespace)/odometry"/>
+    </node>
+
+    <!-- Online panoptic segmentation predictor -->
     <node pkg="active_panoptic_mapping" type="pano_seg_predictor.py" name="pano_seg_node" output="screen">
+        <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/pano_seg/mask2former.yaml"/>
+        <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
+
+        <!-- Topics -->
         <remap from="~input_image" to="$(arg namespace)/color_image" />  
         <remap from="~pano_seg" to="$(arg namespace)/segmentation_image" />  
         <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
+        <remap from="~gt_instance_seg" to="$(arg namespace)/gt_instance_seg"/>
+        <remap from="~gt_semantic_seg" to="$(arg namespace)/gt_semantic_seg"/>
+        <remap from="~pano_seg_vis" to="$(arg namespace)/pano_seg_vis"/>
     </node>
 
-    <!-- Habitat Sim -->
-    <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
-        <rosparam file="$(find habitat_ros)/config/rgbd.yaml" command="load" />
-        <param name="scene_file" value="/media/scratch1/albanesg/replica/room_2/habitat/mesh_semantic.ply" />
-        <param name="enable_physics" value="false"/>
-        <remap from="~rgb" to="$(arg namespace)/color_image"/>
-        <remap from="~depth" to="$(arg namespace)/depth_image"/>
-    </node>
-
-    <!-- Mapper -->
-    <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" required="false">
-        <rosparam file="$(find active_panoptic_mapping)/config/mapper/single_tsdf_variable_count.yaml"/>
+    <!-- Mapper + Planner -->
+    <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping" type="active_panoptic_mapping_node" output="screen">
+        <!-- Config -->
+        <rosparam file="$(find active_panoptic_mapping)/config/$(arg mapper_config)"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/$(arg planner_config)"/>
+             
+        <!-- Topics -->
         <remap from="color_image_in" to="$(arg namespace)/color_image"/>
         <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
         <remap from="segmentation_image_in" to="$(arg namespace)/segmentation_image"/>
         <remap from="labels_in" to="$(arg namespace)/segmentation_labels"/>
-    </node>  
+        <remap from="pose_stamped" to="$(arg namespace)/pose"/>
+        <remap from="command/trajectory" to="$(arg namespace)/command/trajectory"/>
+        <remap from="odometry" to="$(arg namespace)/odometry"/>
+    </node>   
 
+    <!-- Static Transforms -->
+    <node pkg="tf" type="static_transform_publisher" name="tf_odom_world" args="0 0 0 0 0 0 1 /world /odom 100"/>  
+
+    <!-- RViz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping)/rviz/devel.rviz" if="$(arg visualize)"/>
 
 </launch>
