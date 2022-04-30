@@ -11,14 +11,14 @@ simulator:
   control_rate: 30
 
 position_controller:
-  kp_x: 0.2
-  kp_y: 0.2
-  kp_z: 0.3
-  kp_yaw: 0.3
-  kd_x: 0.1
-  kd_y: 0.1
-  kd_z: 0.1
-  kd_yaw: 0.1
+  kp_x: 0.5
+  kp_y: 0.5
+  kp_z: 0.5
+  kp_yaw: 0.8
+  kd_x: 0.2
+  kd_y: 0.2
+  kd_z: 0.2
+  kd_yaw: 0.4
   max_horz_speed: 1.0
   max_vert_speed: 1.0
   max_yaw_rate_degrees: 10.0
