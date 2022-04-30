@@ -121,7 +121,7 @@ class HabitatSimNode:
 
         self.wait = rospy.get_param("~wait", False)
 
-        self.waypoints = []
+        self.waypoints = Queue()
 
         self.async_sim = AsyncSimulator(
             scene_file_path=self.scene_file_path,
