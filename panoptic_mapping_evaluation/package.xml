@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>panoptic_mapping_evaluation</name>
+  <version>0.0.0</version>
+  <description>The panoptic_mapping_evaluation package</description>
+  <maintainer email="albanesg@todo.todo">albanesg</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>roscpp</depend>
+
+  <depend>voxblox</depend>
+  <depend>voxblox_ros</depend>
+  <depend>panoptic_mapping</depend>
+  <depend>panoptic_mapping_ros</depend>
+  <depend>panoptic_mapping_msgs</depend>
+
+  <export>
+  </export>
+</package>
