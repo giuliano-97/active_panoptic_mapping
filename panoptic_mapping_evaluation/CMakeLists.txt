@@ -4,10 +4,10 @@ project(panoptic_mapping_evaluation)
 set(CMAKE_CXX_STANDARD 17)
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
-
-# TODO: Add setup.py to install python libs catkin_python_setup()
+catkin_python_setup()
 
 catkin_package()
+
 
 cs_add_library(${PROJECT_NAME} src/evaluation_data_exporter.cpp)
 
