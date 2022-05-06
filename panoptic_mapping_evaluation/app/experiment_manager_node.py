@@ -20,15 +20,30 @@ class MappingExperimentManager:
 
         self.out_dir_path = Path(rospy.get_param("~out_dir"))
 
-        self.scan_dirs = [
-            p
-            for p in self.data_dir_path.iterdir()
-            if p.is_dir()
-            and p.joinpath("color").is_dir()
-            and p.joinpath("depth").is_dir()
-            and p.joinpath("pose").is_dir()
-            and p.joinpath("panoptic_pred").is_dir()
-        ]
+        scans = rospy.get_param("~scans", None)
+        if scans is not None:
+            self.scan_dirs = []
+            for scan in scans:
+                scan_dir_path = self.data_dir_path / scan
+                if (
+                    scan_dir_path.is_dir()
+                    and scan_dir_path.joinpath("color").is_dir()
+                    and scan_dir_path.joinpath("depth").is_dir()
+                    and scan_dir_path.joinpath("pose").is_dir()
+                    and scan_dir_path.joinpath("panoptic_pred").is_dir()
+                ):
+                    self.scan_dirs.append(scan_dir_path)
+
+        else:
+            self.scan_dirs = [
+                p
+                for p in self.data_dir_path.iterdir()
+                if p.is_dir()
+                and p.joinpath("color").is_dir()
+                and p.joinpath("depth").is_dir()
+                and p.joinpath("pose").is_dir()
+                and p.joinpath("panoptic_pred").is_dir()
+            ]
         if len(self.scan_dirs) < 1:
             rospy.logfatal(f"No scan directories were found in {self.data_dir_path}")
 

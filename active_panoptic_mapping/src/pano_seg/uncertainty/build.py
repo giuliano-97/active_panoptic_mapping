@@ -1,11 +1,11 @@
-from uncertainty_estimator_base import UncertaintyEstimatorBase
+from .uncertainty_estimator_base import UncertaintyEstimatorBase
 
 
 def build_uncertainty_estimator(
     estimator_type: str, **kwargs
 ) -> UncertaintyEstimatorBase:
     if estimator_type.lower() == "entropy":
-        from entropy import Entropy
+        from .entropy import Entropy
 
         return Entropy()
 

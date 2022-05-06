@@ -14,9 +14,9 @@ from detectron2.config import get_cfg
 from detectron2.projects.deeplab import add_deeplab_config
 from detectron2.utils.visualizer import Visualizer
 
-from pano_seg.mask2former import add_maskformer2_config
-from pano_seg.predictors.predictor_base import PredictorBase
-from pano_seg.mask2former.maskformer_model import MaskFormer
+from ..mask2former import add_maskformer2_config
+from ..mask2former.maskformer_model import MaskFormer
+from .predictor_base import PredictorBase
 
 
 class MaskFormerWrapper(MaskFormer):
@@ -219,9 +219,14 @@ class Mask2FormerPredictor(PredictorBase):
 
             for k in ["panoptic_seg", "mask_logits", "mask_probs"]:
                 predictions[k] = predictions[k].cpu().numpy()
+                # Convert mask logits to HWC
+                if k == "mask_logits":
+                    predictions[k] = predictions[k].transpose(1, 2, 0)
 
             # Category id reverse lookup
             for sinfo in predictions["segments_info"]:
-                sinfo["category_id"] = self.contiguous_id_to_dataset_id[sinfo["category_id"]]
+                sinfo["category_id"] = self.contiguous_id_to_dataset_id[
+                    sinfo["category_id"]
+                ]
 
             return predictions

@@ -2,3 +2,6 @@ visualize: "true"
 predictor:
   type: "mask2former"
   model_dir: "/home/albanesg/robostack_catkin_ws/src/active_panoptic_mapping/active_panoptic_mapping/models/mask2former_swin_tiny_scannet"
+
+uncertainty:
+  type: "entropy"

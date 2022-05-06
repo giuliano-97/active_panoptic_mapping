@@ -1,4 +1,4 @@
-from typing import Dict, str
+from typing import Dict
 from abc import ABC, abstractmethod
 
 import numpy as np

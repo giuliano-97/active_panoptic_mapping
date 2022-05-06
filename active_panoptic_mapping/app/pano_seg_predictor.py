@@ -8,7 +8,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
-from pano_seg.predictor_factory import PredictorFactory
+from pano_seg import build_predictor, build_uncertainty_estimator
 from pano_seg.constants import (
     NYU40_IGNORE_LABEL,
     PANOPTIC_LABEL_DIVISOR,
@@ -70,18 +70,31 @@ class PanopticSegmentationNode:
             model_dir_path = Path(rospy.get_param("~predictor/model_dir"))
 
             # Instantiate predictor
-            self.predictor = PredictorFactory.get_predictor(
-                predictor_type, model_dir_path, self.visualize
+            self.predictor = build_predictor(
+                predictor_type,
+                # kwargs
+                model_dir_path=model_dir_path,
+                visualize=self.visualize,
             )
 
             self.img_sub = rospy.Subscriber(
                 "~input_image", Image, callback=self.input_image_cb
             )
 
+            uncertainty_estimator_type = rospy.get_param("~uncertainty/type", "softmax")
+            if uncertainty_estimator_type == "softmax":
+                # FIXME: hack that only work with Mask2Former predictor
+                self.uncertainty_estimator = lambda d: d["mask_probs"]
+            else:
+                self.uncertainty_estimator = build_uncertainty_estimator(
+                    uncertainty_estimator_type
+                )
+
         # Configure pano seg publisher
         self.cv_bridge = CvBridge()
         self.pano_seg_pub = rospy.Publisher("~pano_seg", Image, queue_size=100)
         self.labels_pub = rospy.Publisher("~labels", DetectronLabels, queue_size=100)
+        self.uncertainty_pub = rospy.Publisher("~uncertainty", Image, queue_size=100)
 
         if self.visualize:
             self.pano_seg_vis_pub = rospy.Publisher(
@@ -130,6 +143,8 @@ class PanopticSegmentationNode:
 
         predictions = self.predictor(image)
 
+        uncertainty = self.uncertainty_estimator(predictions)
+
         header = Header(stamp=img_msg.header.stamp, frame_id="depth_cam")
 
         pano_seg_msg = self.cv_bridge.cv2_to_imgmsg(predictions["panoptic_seg"])
@@ -137,8 +152,13 @@ class PanopticSegmentationNode:
 
         labels_msg = segments_info_to_labels_msg(predictions["segments_info"])
         labels_msg.header = header
+
+        uncertainty_msg = self.cv_bridge.cv2_to_imgmsg(uncertainty)
+        uncertainty_msg.header = header
+
         self.pano_seg_pub.publish(pano_seg_msg)
         self.labels_pub.publish(labels_msg)
+        self.uncertainty_pub.publish(uncertainty_msg)
 
         if self.visualize:
             pano_seg_vis_msg = self.cv_bridge.cv2_to_imgmsg(
