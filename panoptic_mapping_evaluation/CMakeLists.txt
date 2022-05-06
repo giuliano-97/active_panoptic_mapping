@@ -21,7 +21,11 @@ target_link_libraries(evaluation_data_export_node ${PROJECT_NAME})
 
 cs_install()
 
-catkin_install_python(PROGRAMS app/evaluation_manager_node.py DESTINATION
-                      ${CATKIN_PACKAGE_BIN_DESTINATION})
+catkin_install_python(
+  PROGRAMS 
+    app/evaluation_manager_node.py 
+    app/experiment_manager_node.py
+  DESTINATION
+    ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 cs_export()

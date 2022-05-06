@@ -15,6 +15,7 @@
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>
   <depend>panoptic_mapping</depend>
+  <depend>active_panoptic_mapping</depend>
   <depend>panoptic_mapping_ros</depend>
   <depend>panoptic_mapping_msgs</depend>
 

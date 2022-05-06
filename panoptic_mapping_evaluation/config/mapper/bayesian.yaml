@@ -1,0 +1,21 @@
+single_tsdf_tracked_instance_type: 0
+
+id_tracker:
+  type: single_tsdf
+  verbosity: 4
+
+  # Single TSDF tracker params
+  voxel_size: 0.05
+  truncation_distance: -2
+  voxels_per_side: 16
+  use_class_layer: true
+  use_detectron: true
+  use_detectron_panoptic: true
+  min_new_instance_size: 500
+  use_class_for_instance_tracking: false
+  use_one_to_one_matching: true
+  use_uncertainty: true
+  tracking_metric: IoU # IoU, overlap
+  match_acceptance_threshold: 0.6
+  classification:
+    type: variable_bayesian
