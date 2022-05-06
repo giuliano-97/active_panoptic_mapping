@@ -34,22 +34,26 @@ class MappingExperimentManager:
 
         self.mapper_configs = rospy.get_param("~mapper_configs", [])
 
-        # TODO: make this configurable?
-        self.mapper_configs_dir_path = (
-            Path(rospkg.RosPack().get_path("panoptic_mapping_evaluation"))
-            / "config"
-            / "mapper"
+        self.package_path = Path(
+            rospkg.RosPack().get_path("panoptic_mapping_evaluation")
         )
+
+        # TODO: make this configurable?
+        self.mapper_configs_dir_path = self.package_path / "config" / "mapper"
 
         self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         roslaunch.configure_logging(self.uuid)
 
     def _run_experiment(self, mapper_config_file_path, scan_dir_path, out_dir_path):
-        rospy.loginfo("Running experiment!")
+        rospy.loginfo(
+            "\n**************************************************************"
+            f"\nStarting experiment:"
+            f"\n\tScan: {scan_dir_path.name}. "
+            f"\n\tMapper config: {mapper_config_file_path.name}"
+            "\n**************************************************************"
+        )
         launch_file_path = (
-            Path(rospkg.RosPack().get_path("panoptic_mapping_evaluation"))
-            / "launch"
-            / "run_experiment_scannet.launch"
+            self.package_path / "launch" / "run_experiment_scannet.launch"
         )
 
         cli_args = [
@@ -69,7 +73,7 @@ class MappingExperimentManager:
 
         parent.spin()
 
-        print("Experiment finished!")
+        rospy.loginfo("Experiment completed successfully.")
 
     def run_experiments(self):
         for scan_dir_path in self.scan_dirs:
