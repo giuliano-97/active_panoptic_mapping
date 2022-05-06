@@ -129,8 +129,10 @@ bool EvaluationDataExporter::exportEvaluationDataCallback(
       if (instance_class_id_pair_it != label_map.end()) {
         label = instance_class_id_pair_it->second * 1000 +
                 instance_class_id_pair_it->first;
-      } else {
+      } else if (label <= 40) {
         label *= 1000;
+      } else {
+        label = 0;
       }
     }
   }
