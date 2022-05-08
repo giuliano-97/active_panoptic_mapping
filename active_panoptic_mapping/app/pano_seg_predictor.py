@@ -82,13 +82,9 @@ class PanopticSegmentationNode:
             )
 
             uncertainty_estimator_type = rospy.get_param("~uncertainty/type", "softmax")
-            if uncertainty_estimator_type == "softmax":
-                # FIXME: hack that only work with Mask2Former predictor
-                self.uncertainty_estimator = lambda d: d["mask_probs"]
-            else:
-                self.uncertainty_estimator = build_uncertainty_estimator(
-                    uncertainty_estimator_type
-                )
+            self.uncertainty_estimator = build_uncertainty_estimator(
+                uncertainty_estimator_type
+            )
 
         # Configure pano seg publisher
         self.cv_bridge = CvBridge()

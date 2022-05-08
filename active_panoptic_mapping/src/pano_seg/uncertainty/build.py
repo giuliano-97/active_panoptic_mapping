@@ -10,8 +10,12 @@ def build_uncertainty_estimator(
         return Entropy()
 
     elif estimator_type.lower() == "max_logit":
-        from max_logit import MaxLogit
+        from .max_logit import MaxLogit
 
         min = kwargs["min"]
         max = kwargs["max"]
         return MaxLogit(min, max)
+    elif estimator_type.lower() == "softmax":
+        from .softmax import Softmax
+
+        return Softmax()
