@@ -39,7 +39,7 @@ id_tracker:
   use_detectron_panoptic: true
   min_new_instance_size: 500
   use_class_for_instance_tracking: false
-  use_one_to_one_matching: true
+  use_one_to_one_matching: false
   use_uncertainty: false
   tracking_metric: IoU # IoU, overlap
   match_acceptance_threshold: 0.6

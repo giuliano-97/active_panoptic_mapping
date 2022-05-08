@@ -3,7 +3,7 @@ single_tsdf_tracked_instance_type: 0
 id_tracker:
   use_uncertainty: true
   classification:
-    type: variable_bayesian
+    type: panoptic_weight
 
 tsdf_integrator:
   use_uncertainty: true

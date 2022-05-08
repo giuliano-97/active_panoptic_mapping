@@ -1,4 +1,5 @@
 dataset: scannet
 data_dir: /media/scratch1/albanesg/scans
-mapper_configs: [variable_count, panoptic_fusion, bayesian]
+# mapper_configs: [variable_count, variable_count_weighted, panoptic_fusion, panoptic_fusion_uncertainty, bayesian]
+mapper_configs: [variable_count_weighted]
 out_dir: /media/scratch1/albanesg/mapping_experiments
