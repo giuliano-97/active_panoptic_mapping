@@ -86,7 +86,9 @@ class EvaluationManager:
             )
 
             # Compute metrics
-            metrics_dict = {"MapID": map_file_path.name}
+            metrics_dict = {
+                "MapID": map_file_path.parent.name + "_" + map_file_path.name
+            }
             metrics_dict.update(
                 panoptic_quality(
                     gt_labels=covered_gt_vertex_labels,
