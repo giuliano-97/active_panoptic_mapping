@@ -1,11 +1,12 @@
 <launch>
 
   <arg name="ground_truth_vertex_labels_file" 
-    default="/media/scratch1/albanesg/scans/scene0011_01/panoptic_vertex_labels.txt"/>
+    default="/media/giuliano/wd_ssd/datasets/replica/room_2/habitat/vertex_panoptic_labels.txt"/>
   <arg name="ground_truth_pointcloud_file" 
-    default="/media/scratch1/albanesg/scans/scene0011_01/scene0011_01_vh_clean_2.ply"/>
+    default="/media/giuliano/wd_ssd/datasets/replica/room_2/habitat/mesh_semantic.ply"/>
   <arg name="experiments_dir"
-    default="/media/scratch1/albanesg/mapping_experiments/scene0011_01"/>
+    default="/media/giuliano/wd_ssd/planning_experiments/replica/room_2"/>
+  <arg name="export_mesh" default="true"/>
 
   <node name="evaluation_manager_node" pkg="panoptic_mapping_evaluation" type="evaluation_manager_node.py" required="true">
     <param name="data_dir" value="$(arg experiments_dir)"/>
@@ -16,5 +17,13 @@
   <node name="evaluation_data_export" pkg="panoptic_mapping_evaluation" type="evaluation_data_export_node">
     <param name="ground_truth_pointcloud_file" value="$(arg ground_truth_pointcloud_file)"/>
     <param name="is_single_tsdf" value="false"/>
+    <param name="export_mesh" value="$(arg export_mesh)"/>
+    <param name="refine_alignment" value="true"/>
+    <rosparam param="alignment_transformation">
+      [0.0, -1.0, 0.0, 0.0,
+       1.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 1.0, 0.0,
+       0.0, 0.0, 0.0, 1.0]
+    </rosparam>
   </node>
 </launch>
