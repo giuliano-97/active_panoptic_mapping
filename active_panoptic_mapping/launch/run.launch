@@ -4,17 +4,17 @@
 
     <arg name="visualize" default="true"/> 
     <arg name="has_screen" default="true"/>
-    <arg name="record" default="true"/>
-    <arg name="datasets_dir" default="$(optenv DATASETS /media/giuliano/wd_ssd/datasets)"/>
+    <arg name="record" default="false"/>
     <arg name="out_dir" default="/media/giuliano/wd_ssd/runs/replica"/>
+    <arg name="datasets_dir" default="$(optenv DATASETS /media/giuliano/wd_ssd/datasets)"/>
 
     <!-- Habitat environment config -->
-    <arg name="scene" default="replica/room_2"/>
+    <arg name="scene" default="replica/apartment_0"/>
     <arg name="environment_config" default="habitat/environments/$(arg scene).yaml" />
     <arg name="habitat_config" default="habitat/replica_embodied.yaml"/>
 
     <!-- Mapper config -->
-    <arg name="mapper_config" default="mapper/panoptic_fusion.yaml"/>
+    <arg name="mapper_config" default="mapper/variable_count.yaml"/>
 
     <!-- Planner config -->
     <arg name="planner_config" default="planner/active_panoptic_mapping_planner.yaml"/>
@@ -23,11 +23,11 @@
     <rosparam file="$(find active_panoptic_mapping)/config/$(arg environment_config)" command="load"/>
     
     <!-- Habitat client node -->
-    <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
+    <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen" required="true">
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
         <param name="scene_file" value="$(arg datasets_dir)/$(arg scene)/habitat/mesh_semantic.ply"/>
-        <param name="wait" value="true"/>
+        <param name="wait" value="5"/>
 
         <!-- Topics -->
         <remap from="~rgb" to="$(arg namespace)/color_image"/>
@@ -74,6 +74,7 @@
         <remap from="pose_stamped" to="$(arg namespace)/pose"/>
         <remap from="command/trajectory" to="$(arg namespace)/command/trajectory"/>
         <remap from="odometry" to="$(arg namespace)/odometry"/>
+        <remap from="visualization" to="$(arg namespace)/visualization"/>
     </node>   
 
     <!-- Static Transforms -->
@@ -84,7 +85,10 @@
 
     <!-- Rosbag -->
     <node name="rosbag_recorder" pkg="rosbag" type="record" 
-        args="-o $(arg out_dir)/bags/room_2 /tf /tf_static /active_panoptic_mapping/color_image /active_panoptic_mapping/depth /active_panoptic_mapping/odometry /active_panoptic_mapping/pose /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked /trajectory_visualization" 
+        args="-o $(arg out_dir)/bags/room_2 
+            /tf /tf_static /trajectory_visualization 
+            /$(arg namespace)/color_image /$(arg namespace)/depth /$(arg namespace)/odometry /$(arg namespace)/pose 
+            /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked" 
         if="$(arg record)"/>
-
+        <!-- /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked  -->
 </launch>
