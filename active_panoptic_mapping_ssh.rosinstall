@@ -56,4 +56,5 @@
 - git:
     local-name: mav_active_3d_planning
     uri: git@github.com:ethz-asl/mav_active_3d_planning.git
+    version: dev/active_change_detection
 
