@@ -1,5 +1,3 @@
-scene_file: /home/giuliano/mt_ipp_panoptic_mapping/datasets/replica/room_2/habitat/mesh_semantic.ply
-
 initial_position:
   x: 0.0
   y: 0.0

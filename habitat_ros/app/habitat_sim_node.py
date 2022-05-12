@@ -105,7 +105,7 @@ class HabitatSimNode:
         rospy.init_node(self.node_name)
 
         # Global parameters
-        self.scene_file_path = rospy.get_param("/scene_file", None)
+        self.scene_file_path = rospy.get_param("~scene_file", None)
         self.initial_position = read_position_from_ros("/initial_position")
 
         # Read environment params
