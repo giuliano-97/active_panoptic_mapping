@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
+from torchvision.transforms import Resize, InterpolationMode
 
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.structures import ImageList
@@ -54,7 +55,7 @@ class MaskFormerWrapper(MaskFormer):
 
         processed_results = []
 
-        for mask_cls_result, mask_pred_result, _, _ in zip(
+        for mask_cls_result, mask_pred_result, _, image_size in zip(
             mask_cls_results,
             mask_pred_results,
             batched_inputs,
@@ -63,12 +64,13 @@ class MaskFormerWrapper(MaskFormer):
             panoptic_seg, segments_info, mask_logits, mask_probs = retry_if_cuda_oom(
                 self.panoptic_inference
             )(mask_cls_result, mask_pred_result)
+            T = Resize(size=image_size, interpolation=InterpolationMode.NEAREST)
             processed_results.append(
                 {
-                    "panoptic_seg": panoptic_seg,
+                    "panoptic_seg": T(panoptic_seg.expand(1, -1, -1))[0],
+                    "mask_logits": T(mask_logits).permute(1, 2, 0),
+                    "mask_probs": T(mask_probs.expand(1, -1, -1))[0],
                     "segments_info": segments_info,
-                    "mask_logits": mask_logits,
-                    "mask_probs": mask_probs,
                 }
             )
 
@@ -155,7 +157,7 @@ def _make_mask2former_cfg(config_file_path: Path, checkpoint_file_path: Path):
 class Mask2FormerPredictor(PredictorBase):
     """Adapted from detectron2 DefaultPredictor"""
 
-    def __init__(self, model_dir_path: Path, visualize: bool = True):
+    def __init__(self, model_dir_path: Path, visualize: bool = False):
 
         self.visualize = visualize
 
@@ -219,9 +221,6 @@ class Mask2FormerPredictor(PredictorBase):
 
             for k in ["panoptic_seg", "mask_logits", "mask_probs"]:
                 predictions[k] = predictions[k].cpu().numpy()
-                # Convert mask logits to HWC
-                if k == "mask_logits":
-                    predictions[k] = predictions[k].transpose(1, 2, 0)
 
             # Category id reverse lookup
             for sinfo in predictions["segments_info"]:
