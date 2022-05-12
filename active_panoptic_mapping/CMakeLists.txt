@@ -24,9 +24,12 @@ cs_export()
 
 catkin_python_setup()
 
-catkin_install_python(PROGRAMS
-  app/pano_seg_predictor.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+catkin_install_python(
+  PROGRAMS
+    app/pano_seg_predictor.py
+    app/experiment_manager.py
+  DESTINATION 
+    ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 
