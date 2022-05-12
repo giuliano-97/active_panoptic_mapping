@@ -103,7 +103,12 @@ class MaskFormerWrapper(MaskFormer):
 
         if cur_masks.shape[0] == 0:
             # We didn't detect any mask :(
-            return panoptic_seg, segments_info
+            return (
+                panoptic_seg,
+                segments_info,
+                mask_logits,
+                torch.zeros((h, w), dtype=torch.float32, device=cur_masks.device),
+            )
         else:
             # take argmax
             mask_max_probs, cur_mask_ids = cur_prob_masks.max(0)
