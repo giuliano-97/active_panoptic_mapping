@@ -2,19 +2,17 @@ initial_position:
   x: 0.0
   y: 0.0
   z: 0.0
-
 map_bounding_volume:
-  x_min: -4
-  x_max: 4
-  y_min: -4
-  y_max: 4
-  z_min: -2
+  x_max: -1
+  x_min: 3
+  y_max: -6
+  y_min: 1
   z_max: 2
-
-target_bounding_volume:
-  x_min: -5
-  x_max: 5 
-  y_min: -5
-  y_max: 5
   z_min: -3
-  z_max: 3
+target_bounding_volume:
+  x_max: -1
+  x_min: 3
+  y_max: -6
+  y_min: 1
+  z_max: 2
+  z_min: -3

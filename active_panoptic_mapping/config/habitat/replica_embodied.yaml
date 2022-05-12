@@ -7,15 +7,15 @@ agent:
 simulator:
   enable_physics: false
   sim_rate: 60
-  sensor_rate: 1
+  sensor_rate: 3
   control_rate: 30
   odom_pub_rate: 15
 
 position_controller:
-  kp_x: 1.5
-  kp_y: 1.5
-  kp_z: 1.5
-  kp_yaw: 1.5
+  kp_x: 1.0
+  kp_y: 1.0
+  kp_z: 1.0
+  kp_yaw: 1.6
   kd_x: 0.4
   kd_y: 0.4
   kd_z: 0.4
