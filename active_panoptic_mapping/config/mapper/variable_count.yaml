@@ -1,5 +1,5 @@
 # General Params
-verbosity: 2
+verbosity: 0
 is_single_tsdf: true
 single_tsdf_tracked_instance_type: 0
 use_threadsafe_submap_collection: true
@@ -17,7 +17,7 @@ labels:
   file_name: ""
 
 camera:
-  verbosity: 1
+  verbosity: 0
   width: 320  # Px
   height: 240
   vx: 160
@@ -29,10 +29,10 @@ camera:
 
 id_tracker:
   type: single_tsdf # ground_truth, projective, detectron, single_tsdf
-  verbosity: 4
+  verbosity: 0
 
   # Single TSDF tracker params
-  voxel_size: 0.05
+  voxel_size: 0.1
   truncation_distance: -2
   voxels_per_side: 16
   use_class_layer: true
@@ -45,11 +45,11 @@ id_tracker:
   tracking_metric: IoU # IoU, overlap
   match_acceptance_threshold: 0.6
   classification:
-    type: panoptic_weight
+    type: variable_count
 
 tsdf_integrator:
   type: single_tsdf
-  verbosity: 1
+  verbosity: 0
 
   # Projective
   use_weight_dropoff: true
@@ -60,7 +60,7 @@ tsdf_integrator:
 
 submap_allocator:
   type: semantic # semantic
-  verbosity: 1
+  verbosity: 0
 
   # submaps
   voxels_per_side: &voxels_per_side 16
@@ -80,7 +80,7 @@ submap_allocator:
 
 freespace_allocator:
   type: monolithic # monolithic
-  verbosity: 1
+  verbosity: 0
   voxels_per_side: *voxels_per_side
   truncation_distance: -2
   voxel_size: 0.3
@@ -88,7 +88,7 @@ freespace_allocator:
 visualization:
   submaps:
     type: single_tsdf
-    verbosity: 1
+    verbosity: 0
     color_mode: classes # color, normals, classes, instances, classification
     visualization_mode: all # all
     submap_color_discretization: 20
@@ -100,18 +100,18 @@ visualization:
     mesh_min_weight: 0.000001
 
   planning:
-    verbosity: 1
+    verbosity: 0
     visualize_slice: true
     slice_resolution: 0.1
     slice_height: -0.5
 
   tracking:
-    verbosity: 1
+    verbosity: 0
     visualize_tracking: true
 
 data_writer:
-  type: log
-  verbosity: 1
+  type: evaluation
+  verbosity: 0
   output_directory: ""
 
     
