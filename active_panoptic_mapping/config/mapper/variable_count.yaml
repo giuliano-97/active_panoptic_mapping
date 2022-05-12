@@ -110,7 +110,7 @@ visualization:
     visualize_tracking: true
 
 data_writer:
-  type: evaluation
+  type: log
   verbosity: 0
   output_directory: ""
 
