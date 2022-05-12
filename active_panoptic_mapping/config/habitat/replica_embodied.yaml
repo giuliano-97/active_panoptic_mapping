@@ -7,20 +7,21 @@ agent:
 simulator:
   enable_physics: false
   sim_rate: 60
-  sensor_rate: 3
+  sensor_rate: 1
   control_rate: 30
+  odom_pub_rate: 15
 
 position_controller:
-  kp_x: 0.5
-  kp_y: 0.5
-  kp_z: 0.5
-  kp_yaw: 0.8
-  kd_x: 0.2
-  kd_y: 0.2
-  kd_z: 0.2
-  kd_yaw: 0.4
-  max_horz_speed: 1.0
-  max_vert_speed: 1.0
-  max_yaw_rate_degrees: 10.0
-  reached_thresh_xyz: 0.1
-  reached_thresh_yaw_degrees: 0.1
+  kp_x: 1.5
+  kp_y: 1.5
+  kp_z: 1.5
+  kp_yaw: 1.5
+  kd_x: 0.4
+  kd_y: 0.4
+  kd_z: 0.4
+  kd_yaw: 0.8
+  max_horz_speed: 2.0
+  max_vert_speed: 2.0
+  max_yaw_rate_degrees: 20.0
+  reached_thresh_xyz: 0.05
+  reached_thresh_yaw_degrees: 0.05

@@ -22,6 +22,7 @@ from geometry_msgs.msg import (
 )
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
+from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 
 from habitat_ros.async_simulator import AsyncSimulator
@@ -111,6 +112,7 @@ class HabitatSimNode:
         self.sim_rate = rospy.get_param("~simulator/sim_rate", 60)
         self.sensor_rate = rospy.get_param("~simulator/sensor_rate", 3)
         self.control_rate = rospy.get_param("~simulator/control_rate", 40)
+        self.odom_pub_rate = rospy.get_param("~simulator/odom_pub_rate", 9)
         self.enable_physics = rospy.get_param("simulator/enable_physics", False)
 
         # Read agent params
@@ -120,6 +122,17 @@ class HabitatSimNode:
         self.use_embodied_agent = rospy.get_param("~agent/embodied", False)
 
         self.wait = rospy.get_param("~wait", False)
+
+        self.toggle_pub_sensor_data_srv = rospy.Service(
+            "~toggle_pub_sensor_data",
+            SetBool,
+            self.toggle_pub_sensor_data_srv_cb,
+        )
+
+        if isinstance(self.wait, bool) and self.wait == True:
+            self.pub_sensor_data = False
+        else:
+            self.pub_sensor_data = True
 
         self.waypoints = Queue()
 
@@ -139,6 +152,9 @@ class HabitatSimNode:
         self.position_controller = PIDPositionController(position_controller_params)
         self.position_controller_thread = Thread(target=self._run_position_controller)
         self.position_controller_lock = Lock()
+
+        # Instantiate thread to publish odometry
+        self.publish_odometry_thread = Thread(target=self._run_publish_odometry)
 
         # TODO: make these configurable or read from rosparam server
         self.global_frame_name = "world"
@@ -198,6 +214,10 @@ class HabitatSimNode:
             queue_size=10,
         )
 
+    def toggle_pub_sensor_data_srv_cb(self, request: SetBoolRequest):
+        self.pub_sensor_data = request.data
+        return SetBoolResponse(success=True)
+
     def cmd_vel_callback(self, cmd_vel_msg: Twist):
         # Convert from ros to habitat coordinate convention
         linear_vel = vec_ros_to_habitat(vector3_to_numpy(cmd_vel_msg.linear))
@@ -225,7 +245,34 @@ class HabitatSimNode:
                 waypoint = Waypoint(position, yaw, False)
                 self.waypoints.put(waypoint)
 
-    def _publish_odometry_and_sensor_observations(self):
+    def _run_publish_odometry(self):
+        _r = rospy.Rate(self.odom_pub_rate)
+        while not rospy.is_shutdown():
+            position, orientation = self.async_sim.get_agent_pose()
+
+            position = vec_habitat_to_ros(position)
+            orientation = quat_habitat_to_ros(orientation)
+
+            # Use timer timestamp
+            timestamp = rospy.Time.now()
+
+            odom_msg = Odometry()
+            odom_msg.header = Header(stamp=timestamp, frame_id=self.odom_frame_name)
+            odom_msg.child_frame_id = self.agent_frame_name
+            odom_msg.pose.pose.position = Point(*position)
+            odom_msg.pose.pose.orientation = Quaternion(*orientation)
+
+            self.tf_broadcaster.sendTransform(
+                translation=position,
+                rotation=orientation,
+                time=timestamp,
+                child=self.agent_frame_name,
+                parent=self.odom_frame_name,
+            )
+
+            _r.sleep()
+
+    def _publish_sensor_observations(self):
         (
             position,
             orientation,
@@ -282,12 +329,6 @@ class HabitatSimNode:
         pose_msg.pose.position = Point(*position)
         pose_msg.pose.orientation = Quaternion(*orientation)
 
-        odom_msg = Odometry()
-        odom_msg.header = Header(stamp=timestamp, frame_id=self.odom_frame_name)
-        odom_msg.child_frame_id = self.agent_frame_name
-        odom_msg.pose.pose.position = Point(*position)
-        odom_msg.pose.pose.orientation = Quaternion(*orientation)
-
         # Publish observations
         self.rgb_pub.publish(rgb_msg)
         self.depth_pub.publish(depth_msg)
@@ -295,14 +336,6 @@ class HabitatSimNode:
         self.instance_pub.publish(instance_msg)
         self.semantic_pub.publish(semantic_msg)
         self.pose_pub.publish(pose_msg)
-        self.odom_pub.publish(odom_msg)
-        self.tf_broadcaster.sendTransform(
-            translation=position,
-            rotation=orientation,
-            time=timestamp,
-            child=self.agent_frame_name,
-            parent=self.odom_frame_name,
-        )
 
     def _run_position_controller(self):
         _r = rospy.Rate(self.control_rate)
@@ -337,26 +370,25 @@ class HabitatSimNode:
 
             _r.sleep()
 
-    def _start_simulator_and_controller_threads(self):
-        # Start simulator thread
-        self.async_sim.start()
-
-        # Start position controller thread
-        self.position_controller_thread.start()
-
     def run(self):
         r"""
         Start loop in which at every iteration sensor observations
         are published. Blocking.
         """
         try:
-            self._start_simulator_and_controller_threads()
-            if self.wait:
-                rospy.sleep(10.0)
+            # Start simulator thread
+            self.async_sim.start()
+            # Start position controller thread
+            self.position_controller_thread.start()
+            # Start publish odometry thread
+            self.publish_odometry_thread.start()
+            if isinstance(self.wait, int) and self.wait > 0:
+                rospy.sleep(self.wait)
             # Start the simulator in a separate thread
             _r = rospy.Rate(self.sensor_rate)
             while not rospy.is_shutdown():
-                self._publish_odometry_and_sensor_observations()
+                if self.pub_sensor_data:
+                    self._publish_sensor_observations()
                 _r.sleep()
         except Exception as e:
             print(str(e))

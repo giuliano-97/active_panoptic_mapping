@@ -207,6 +207,10 @@ class AsyncSimulator(Thread):
         with self.sim_lock:
             return self._get_agent_pose()
 
+    def get_sensor_observations(self):
+        with self.sim_lock:
+            return self.sim.get_sensor_observations()
+
     def get_agent_pose_and_sensor_observations(self):
         with self.sim_lock:
             observations = self.sim.get_sensor_observations()
