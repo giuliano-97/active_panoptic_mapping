@@ -25,6 +25,7 @@ catkin_install_python(
   PROGRAMS 
     app/evaluation_manager_node.py 
     app/experiment_manager_node.py
+    app/scannet_data_player.py
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION})
 
