@@ -1,4 +1,3 @@
-from curses import meta
 import json
 from overrides import overrides
 from pathlib import Path
@@ -9,6 +8,7 @@ from torch.nn import functional as F
 from torchvision.transforms import Resize, InterpolationMode
 
 from detectron2.checkpoint import DetectionCheckpointer
+from detectron2.data import MetadataCatalog
 from detectron2.structures import ImageList
 from detectron2.utils.memory import retry_if_cuda_oom
 from detectron2.config import get_cfg
@@ -162,18 +162,28 @@ def _make_mask2former_cfg(config_file_path: Path, checkpoint_file_path: Path):
 class Mask2FormerPredictor(PredictorBase):
     """Adapted from detectron2 DefaultPredictor"""
 
-    def __init__(self, model_dir_path: Path, visualize: bool = False):
+    def __init__(
+        self,
+        model_dir_path: Path,
+        visualize: bool = False,
+        use_dataset_category_ids: bool = True,
+    ):
 
         self.visualize = visualize
 
         if not model_dir_path.is_dir():
             raise FileNotFoundError(f"{model_dir_path} is not a valid directory!")
-        config_file_path = model_dir_path / "config.yaml"
 
+        config_file_path = model_dir_path / "config.yaml"
         if not config_file_path.is_file():
             raise FileNotFoundError("Model config not found!")
-        checkpoint_file_path = model_dir_path / "model_final.pth"
-        if not checkpoint_file_path.is_file():
+
+        checkpoint_file_path = model_dir_path / "model_final"
+        if checkpoint_file_path.with_suffix(".pth").is_file():
+            checkpoint_file_path = checkpoint_file_path.with_suffix(".pth")
+        elif checkpoint_file_path.with_suffix(".pkl").is_file():
+            checkpoint_file_path = checkpoint_file_path.with_suffix(".pkl")
+        else:
             raise FileNotFoundError("Model checkpoint not found!")
 
         self.cfg = _make_mask2former_cfg(config_file_path, checkpoint_file_path)
@@ -183,20 +193,26 @@ class Mask2FormerPredictor(PredictorBase):
         self.model.eval()
 
         metadata_file_path = model_dir_path / "metadata.json"
-        if not metadata_file_path.is_file():
-            raise FileNotFoundError("Model metadata file not found!")
-        with metadata_file_path.open("r") as f:
-            metadata_dict = json.load(f)
+        if metadata_file_path.is_file():
+            print("Model dataset metadata not registered. Loading metadata from file.")
+            with metadata_file_path.open("r") as f:
+                metadata_dict = json.load(f)
 
-        # Hack to avoid error due to different dataset name
-        del metadata_dict["name"]
-        self.model.metadata.set(**metadata_dict)
+            # Hack to avoid error due to different dataset name
+            del metadata_dict["name"]
+            self.model.metadata.set(**metadata_dict)
+            print("Done.")
 
         # For reverse lookup of category id
-        self.contiguous_id_to_dataset_id = {
-            int(v): int(k)
-            for k, v in self.model.metadata.stuff_dataset_id_to_contiguous_id.items()
-        }
+        self.use_dataset_category_ids = use_dataset_category_ids
+        if self.use_dataset_category_ids:
+            self.contiguous_id_to_dataset_id = {
+                int(v): int(k)
+                for k, v in {
+                    **self.model.metadata.stuff_dataset_id_to_contiguous_id,
+                    **self.model.metadata.thing_dataset_id_to_contiguous_id,
+                }.items()
+            }
 
         checkpointer = DetectionCheckpointer(self.model)
         _ = checkpointer.load(self.cfg.MODEL.WEIGHTS)
@@ -227,10 +243,11 @@ class Mask2FormerPredictor(PredictorBase):
             for k in ["panoptic_seg", "mask_logits", "mask_probs"]:
                 predictions[k] = predictions[k].cpu().numpy()
 
-            # Category id reverse lookup
-            for sinfo in predictions["segments_info"]:
-                sinfo["category_id"] = self.contiguous_id_to_dataset_id[
-                    sinfo["category_id"]
-                ]
+            if self.use_dataset_category_ids:
+                # Category id reverse lookup
+                for sinfo in predictions["segments_info"]:
+                    sinfo["category_id"] = self.contiguous_id_to_dataset_id[
+                        sinfo["category_id"]
+                    ]
 
             return predictions

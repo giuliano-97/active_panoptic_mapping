@@ -8,13 +8,13 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
-from pano_seg import build_predictor, build_uncertainty_estimator
-from pano_seg.constants import (
+from panoptic_segmentation import build_predictor, build_uncertainty_estimator
+from panoptic_segmentation.constants import (
     NYU40_IGNORE_LABEL,
     PANOPTIC_LABEL_DIVISOR,
     NYU40_THING_CLASSES,
 )
-from pano_seg.visualization import colorize_panoptic_segmentation
+from panoptic_segmentation.visualization import colorize_panoptic_segmentation
 
 
 def segments_info_to_labels_msg(segments_info) -> DetectronLabels:
@@ -39,7 +39,7 @@ def segments_info_to_labels_msg(segments_info) -> DetectronLabels:
 class PanopticSegmentationNode:
     def __init__(self):
         # Init node
-        rospy.init_node("pano_seg_node")
+        rospy.init_node("panoptic_segmentation_node")
 
         # Load params
         self.visualize = rospy.get_param("~visualize", False)

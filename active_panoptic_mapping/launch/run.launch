@@ -3,10 +3,10 @@
     <arg name="namespace" default="active_panoptic_mapping"/>
 
     <arg name="visualize" default="true"/> 
-    <arg name="has_screen" default="true"/>
-    <arg name="record" default="false"/>
-    <arg name="out_dir" default="/media/giuliano/wd_ssd/runs/replica"/>
-    <arg name="datasets_dir" default="$(optenv DATASETS /media/giuliano/wd_ssd/datasets)"/>
+    <arg name="has_screen" default="false"/>
+    <arg name="record" default="true"/>
+    <arg name="datasets_dir" default="$(optenv DATASETS /media/scratch1/albanesg)"/>
+    <arg name="out_dir" default="/media/scratch1/albanesg/planning_experiments"/>
 
     <!-- Habitat environment config -->
     <arg name="scene" default="replica/apartment_0"/>
@@ -26,8 +26,8 @@
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen" required="true">
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
-        <param name="scene_file" value="$(arg datasets_dir)/$(arg scene)/habitat/mesh_semantic.ply"/>
-        <param name="wait" value="5"/>
+        <param name="~scene_file" value="$(arg datasets_dir)/$(arg scene)/habitat/mesh_semantic.ply"/>
+        <param name="~wait" value="10"/>
 
         <!-- Topics -->
         <remap from="~rgb" to="$(arg namespace)/color_image"/>
@@ -40,10 +40,10 @@
     </node>
 
     <!-- Online panoptic segmentation predictor -->
-    <node pkg="active_panoptic_mapping" type="pano_seg_predictor.py" name="pano_seg_node" output="screen">
+    <node pkg="panoptic_segmentation" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/pano_seg/mask2former.yaml"/>
-        <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
+        <param name="~use_groundtruth" value="false"/> <!-- Use gt for debugging on machine with no GPU -->
 
         <!-- Topics -->
         <remap from="~input_image" to="$(arg namespace)/color_image" />  
@@ -52,6 +52,7 @@
         <remap from="~gt_instance_seg" to="$(arg namespace)/gt_instance_seg"/>
         <remap from="~gt_semantic_seg" to="$(arg namespace)/gt_semantic_seg"/>
         <remap from="~pano_seg_vis" to="$(arg namespace)/pano_seg_vis"/>
+        <remap from="~uncertainty" to="$(arg namespace)/uncertainty_image"/>
     </node>
 
     <!-- Mapper + Planner -->
@@ -60,7 +61,6 @@
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg mapper_config)"/>
         <param name="labels/file_name" value="$(find active_panoptic_mapping)/config/mapper/nyu40_detectron_labels.csv"/>
         <param name="data_writer/output_directory" value="$(arg out_dir)/logs"/>
-
         
         <!-- Planner -->
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg planner_config)"/>
@@ -71,6 +71,7 @@
         <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
         <remap from="segmentation_image_in" to="$(arg namespace)/segmentation_image"/>
         <remap from="labels_in" to="$(arg namespace)/segmentation_labels"/>
+        <remap from="uncertainty_image_in" to="$(arg namespace)/uncertainty_image"/>
         <remap from="pose_stamped" to="$(arg namespace)/pose"/>
         <remap from="command/trajectory" to="$(arg namespace)/command/trajectory"/>
         <remap from="odometry" to="$(arg namespace)/odometry"/>
@@ -90,5 +91,4 @@
             /$(arg namespace)/color_image /$(arg namespace)/depth /$(arg namespace)/odometry /$(arg namespace)/pose 
             /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked" 
         if="$(arg record)"/>
-        <!-- /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked  -->
 </launch>

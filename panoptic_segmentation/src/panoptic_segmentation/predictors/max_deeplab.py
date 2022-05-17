@@ -4,8 +4,8 @@ import numpy as np
 from overrides import overrides
 import tensorflow as tf
 
-from pano_seg.predictors.predictor_base import PredictorBase
-from pano_seg.constants import (
+from .predictor_base import PredictorBase
+from ..constants import (
     NYU40_IGNORE_LABEL,
     NYU40_THING_CLASSES,
     NYU40_STUFF_CLASSES,

@@ -5,7 +5,9 @@ from overrides import overrides
 from scipy.stats import entropy
 from scipy.special import softmax
 
-from pano_seg.uncertainty.uncertainty_estimator_base import UncertaintyEstimatorBase
+from panoptic_segmentation.uncertainty.uncertainty_estimator_base import (
+    UncertaintyEstimatorBase,
+)
 
 _ENTROPY_LOG_BASE = 2
 

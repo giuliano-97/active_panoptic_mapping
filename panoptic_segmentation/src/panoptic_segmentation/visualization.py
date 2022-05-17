@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from pano_seg.constants import (
+from panoptic_segmentation.constants import (
     NYU40_IGNORE_LABEL,
     NYU40_STUFF_CLASSES,
     PANOPTIC_LABEL_DIVISOR,

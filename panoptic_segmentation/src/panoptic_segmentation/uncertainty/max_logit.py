@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 from overrides import overrides
 
-from pano_seg.uncertainty.uncertainty_estimator_base import UncertaintyEstimatorBase
+from panoptic_segmentation.uncertainty.uncertainty_estimator_base import UncertaintyEstimatorBase
 
 
 class MaxLogit(UncertaintyEstimatorBase):

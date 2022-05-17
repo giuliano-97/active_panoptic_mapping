@@ -17,19 +17,3 @@ target_link_libraries(active_panoptic_mapping_node ${PROJECT_NAME})
 
 cs_install()
 cs_export()
-
-#############
-## Python ##
-#############
-
-catkin_python_setup()
-
-catkin_install_python(
-  PROGRAMS
-    app/pano_seg_predictor.py
-    app/experiment_manager.py
-  DESTINATION 
-    ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-

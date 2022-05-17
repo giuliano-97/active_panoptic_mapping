@@ -4,7 +4,9 @@ import numpy as np
 from overrides import overrides
 from scipy.special import softmax
 
-from pano_seg.uncertainty.uncertainty_estimator_base import UncertaintyEstimatorBase
+from panoptic_segmentation.uncertainty.uncertainty_estimator_base import (
+    UncertaintyEstimatorBase,
+)
 
 
 class Softmax(UncertaintyEstimatorBase):
