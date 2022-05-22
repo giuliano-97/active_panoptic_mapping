@@ -89,8 +89,8 @@ def create_replica_scene_config(
             }
         )
 
-    with output_file_path.open("w") as f:
-        yaml.dump(yaml.safe_load(config), f)
+        with output_file_path.open("w") as f:
+            yaml.dump(yaml.safe_load(config), f)
 
 
 def _parse_args():
