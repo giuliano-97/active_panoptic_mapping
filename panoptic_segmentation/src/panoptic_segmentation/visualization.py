@@ -1,5 +1,6 @@
 import collections
 import logging
+from unicodedata import category
 
 import numpy as np
 
@@ -52,18 +53,27 @@ def perturb_color(
     return random_color
 
 
-def colorize_panoptic_segmentation(panoptic_labels):
+def colorize_panoptic_segmentation(panoptic_seg: np.ndarray, segments_info=None):
 
-    if len(panoptic_labels.shape) == 2:
+    if len(panoptic_seg.shape) == 2:
         colors = np.zeros(
-            shape=(panoptic_labels.shape[0], panoptic_labels.shape[1], 3),
+            shape=(panoptic_seg.shape[0], panoptic_seg.shape[1], 3),
             dtype=np.uint8,
         )
     else:
-        colors = np.zeros(shape=(panoptic_labels.shape[0], 3), dtype=np.uint8)
+        colors = np.zeros(shape=(panoptic_seg.shape[0], 3), dtype=np.uint8)
 
-    semantic_labels = panoptic_labels // PANOPTIC_LABEL_DIVISOR
-    instance_ids = panoptic_labels % PANOPTIC_LABEL_DIVISOR
+    if segments_info is not None:
+        instance_ids = np.copy(panoptic_seg)
+        semantic_labels = np.zeros_like(panoptic_seg, dtype=np.int64)
+        for sinfo in segments_info:
+            id = sinfo["id"]
+            category_id = sinfo["category_id"]
+            semantic_labels[panoptic_seg == id] = category_id
+    else:
+        semantic_labels = panoptic_seg // PANOPTIC_LABEL_DIVISOR
+        instance_ids = panoptic_seg % PANOPTIC_LABEL_DIVISOR
+        
     unique_semantic_values = np.unique(semantic_labels)
 
     used_colors = collections.defaultdict(set)
