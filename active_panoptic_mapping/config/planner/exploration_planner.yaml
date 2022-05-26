@@ -1,0 +1,33 @@
+trajectory_evaluator:
+  type: "RRTStarEvaluatorAdapter"
+
+  following_evaluator:
+    type: "ContinuousYawPlanningEvaluator"
+    n_directions: 12
+    n_sections_fov: 3
+    update_range: 3.0
+    update_gain: 0.0
+    update_sections_separate: false
+
+    following_evaluator:
+      type: "NaiveEvaluator"
+      visualize_sensor_view: true
+      bounding_volume_args: "/target_bounding_volume"
+
+      sensor_model:
+        type: "IterativeRayCaster"
+        sampling_time: 0.0
+        ray_length: 5.0
+        focal_length: 160.0
+        resolution_x: 320 # 640-90/172-30/127-22.5 deg fov
+        resolution_y: 240
+        downsampling_factor: 5.0
+
+      cost_computer:
+        type: "SegmentTime"
+
+      value_computer:
+        type: "GlobalNormalizedGain"
+
+      next_selector:
+        type: "SubsequentBest"

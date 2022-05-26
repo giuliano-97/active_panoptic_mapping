@@ -4,6 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Drone1
+        - /Planner1
         - /Planner1/Namespaces1
       Splitter Ratio: 0.6604278087615967
     Tree Height: 481
@@ -38,7 +40,7 @@ Visualization Manager:
       Enabled: true
       Length: 0.5
       Name: Drone
-      Radius: 0.10000000149011612
+      Radius: 0.05000000074505806
       Reference Frame: depth_cam
       Value: true
     - Alpha: 1
@@ -132,7 +134,9 @@ Visualization Manager:
         candidate_text: false
         candidate_trajectories: true
         canidate_gains: true
-        completed_trajectory: false
+        completed_trajectory: true
+        current_goal: true
+        trajectory_evaluation: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -179,9 +183,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6497973203659058
+      Pitch: 0.5797972679138184
       Target Frame: <Fixed Frame>
-      Yaw: 4.525880336761475
+      Yaw: 0.2726961076259613
     Saved: ~
 Window Geometry:
   Color:

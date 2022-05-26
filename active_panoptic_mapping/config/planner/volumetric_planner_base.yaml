@@ -1,0 +1,69 @@
+#Config for Volumetric Exploration Planner
+replan_pos_threshold: 0.15
+replan_yaw_threshold: 0.15
+
+max_new_segments: 0
+min_new_segments: 0
+max_new_tries: 0
+min_new_tries: 0
+min_new_value: 0
+
+verbose_modules: true
+build_modules_on_init: true
+expand_batch: 1
+visualize_gain: true
+highlight_executed_trajectory: true
+
+map:
+  type: "PanopticMap"
+  voxel_size: 0.1
+  check_collision_distance: 1.0
+
+system_constraints:
+  v_max: 1.0
+  a_max: 1.0
+  yaw_rate_max: 1.6
+  yaw_accel_max: 1.6
+  collision_radius: 0.1
+
+trajectory_generator:
+  collision_optimistic: false
+  bounding_volume_args: "/map_bounding_volume"
+  clearing_radius: 0.7
+
+  type: "RRTStar"
+  all_semgents_feasible: false
+  crop_segments: true
+  crop_margin: 0.2
+  crop_min_length: 0.5
+  min_path_length: 0.5
+  max_extension_range: 1.5
+  maximum_tries: 0 # 0 means until a feasible goal is found
+  sampling_rate: 20.0
+  sample_yaw: true
+
+  sampling_mode: "semilocal" # uniform, spheric, semilocal
+  semilocal_sampling_count: 10
+  semilocal_sampling_radius_max: 1.0
+  semilocal_sampling_radius_min: 0.5
+
+  rewire_root: true
+  rewire_intermediate: true
+  reinsert_root: true
+  max_rewire_range: 1.6
+  max_density_range: 0.0 # Only add points if there are no points closer than this
+  n_neighbors: 20
+
+  generator_updater:
+    type: "RecheckCollision"
+
+back_tracker:
+  type: "RotateReverse"
+  turn_rate: 1.6
+  update_rate: 1
+  sampling_rate: 20.0
+  n_rotations: 0
+  stack_size: 10
+
+
+

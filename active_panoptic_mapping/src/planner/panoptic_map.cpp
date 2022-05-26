@@ -15,6 +15,7 @@ void PanopticMap::setupFromParamMap(Module::ParamMap* param_map) {
   setParam<float>(param_map, "check_collision_distance",
                   &p_check_collision_distance_, 0.5);
   setParam<float>(param_map, "voxel_size", &p_voxel_size_, 0.1);
+  setParam<float>(param_map, "max_tsdf_weight", &p_max_tsdf_weight_, 10000);
 
   // Cache relevant data.
   c_collision_offsets_ = {Eigen::Vector3d::Zero(),   Eigen::Vector3d::UnitX(),
@@ -26,29 +27,30 @@ void PanopticMap::setupFromParamMap(Module::ParamMap* param_map) {
   }
 }
 
-PanopticMap::PanopticMap(PlannerI& planner) : OccupancyMap(planner) {}
+PanopticMap::PanopticMap(PlannerI& planner) : TSDFMap(planner) {}
 
 bool PanopticMap::checkIsSetup() {
   if (is_setup_) {
     return true;
   }
-  if (!map_) {
+  if (!mapper_) {
     return false;
   }
   const int active_id =
-      map_->getSubmapCollection().getActiveFreeSpaceSubmapID();
+      mapper_->getSubmapCollection().getActiveFreeSpaceSubmapID();
   if (active_id < 0) {
     return false;
   }
 
-  active_submap_ = &map_->getSubmapCollection().getSubmap(active_id);
+  active_submap_ = &mapper_->getSubmapCollection().getSubmap(active_id);
+  p_voxel_size_ = active_submap_->getConfig().voxel_size;
   is_setup_ = true;
   return true;
 }
 
 void PanopticMap::setMap(
     std::shared_ptr<const panoptic_mapping::PanopticMapper> map) {
-  map_ = std::move(map);
+  mapper_ = std::move(map);
 }
 
 bool PanopticMap::isTraversable(const Eigen::Vector3d& position,
@@ -152,6 +154,63 @@ bool PanopticMap::getVoxelCenter(Eigen::Vector3d* center,
   *center += voxblox::getCenterPointFromGridIndex(voxel_id, p_voxel_size_)
                  .cast<double>();
   return true;
+}
+
+double PanopticMap::getVoxelDistance(const Eigen::Vector3d& point) {
+  if (!checkIsSetup()) {
+    return 0.0;
+  }
+
+  auto position = point.cast<voxblox::FloatingPoint>();
+  panoptic_mapping::TsdfBlock::ConstPtr active_block =
+      active_submap_->getTsdfLayer().getBlockPtrByCoordinates(position);
+
+  // Look-up active map.
+  if (active_block) {
+    const panoptic_mapping::TsdfVoxel& voxel =
+        active_block->getVoxelByCoordinates(position);
+    return voxel.distance;
+  }
+  return 0.0;
+}
+
+double PanopticMap::getVoxelWeight(const Eigen::Vector3d& point) {
+  if (!checkIsSetup()) {
+    return 0.0;
+  }
+
+  // Hierarchical lookup preferring the active map.
+  auto position = point.cast<voxblox::FloatingPoint>();
+  panoptic_mapping::TsdfBlock::ConstPtr active_block =
+      active_submap_->getTsdfLayer().getBlockPtrByCoordinates(position);
+
+  // Look-up active map.
+  if (active_block) {
+    const panoptic_mapping::TsdfVoxel& voxel =
+        active_block->getVoxelByCoordinates(position);
+    return voxel.weight;
+  }
+  return 0.0;
+}
+
+double PanopticMap::getMaximumWeight() { return p_max_tsdf_weight_; }
+
+double PanopticMap::getClassVoxelProbability(const Eigen::Vector3d& point) {
+  if (!checkIsSetup()) {
+    return -1.0;
+  }
+  auto position = point.cast<voxblox::FloatingPoint>();
+  panoptic_mapping::ClassBlock::ConstPtr class_block =
+      active_submap_->getClassLayer().getBlockPtrByCoordinates(position);
+
+  if (!class_block) {
+    return -1.0;
+  }
+
+  const panoptic_mapping::ClassVoxel& class_voxel =
+      class_block->getVoxelByCoordinates(position);
+
+  return class_voxel.getBelongingProbability();
 }
 
 }  // namespace map

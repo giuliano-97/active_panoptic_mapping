@@ -3,13 +3,13 @@
     <arg name="namespace" default="active_panoptic_mapping"/>
 
     <arg name="visualize" default="true"/> 
-    <arg name="has_screen" default="false"/>
-    <arg name="record" default="true"/>
-    <arg name="datasets_dir" default="$(optenv DATASETS /media/scratch1/albanesg)"/>
-    <arg name="out_dir" default="/media/scratch1/albanesg/planning_experiments"/>
+    <arg name="has_screen" default="true"/>
+    <arg name="record" default="false"/>
+    <arg name="datasets_dir" default="$(find active_panoptic_mapping)/datasets"/>
+    <arg name="out_dir" default="$(find active_panoptic_mapping)/experiments"/>
 
     <!-- Habitat environment config -->
-    <arg name="scene" default="replica/apartment_0"/>
+    <arg name="scene" default="replica/frl_apartment_0"/> <!-- office_4, room_2, frl_apartment_0 -->
     <arg name="environment_config" default="habitat/environments/$(arg scene).yaml" />
     <arg name="habitat_config" default="habitat/replica_embodied.yaml"/>
 
@@ -17,7 +17,8 @@
     <arg name="mapper_config" default="mapper/variable_count.yaml"/>
 
     <!-- Planner config -->
-    <arg name="planner_config" default="planner/active_panoptic_mapping_planner.yaml"/>
+    <arg name="planner_config" 
+        default="planner/panoptic_reconstruction_planner"/> <!-- panoptic_reconstruction, reconstruction, exploration -->
 
     <!-- Load environment params in global namespace -->
     <rosparam file="$(find active_panoptic_mapping)/config/$(arg environment_config)" command="load"/>
@@ -43,7 +44,7 @@
     <node pkg="panoptic_segmentation" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/pano_seg/mask2former.yaml"/>
-        <param name="~use_groundtruth" value="false"/> <!-- Use gt for debugging on machine with no GPU -->
+        <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
 
         <!-- Topics -->
         <remap from="~input_image" to="$(arg namespace)/color_image" />  
@@ -63,7 +64,8 @@
         <param name="data_writer/output_directory" value="$(arg out_dir)/logs"/>
         
         <!-- Planner -->
-        <rosparam file="$(find active_panoptic_mapping)/config/$(arg planner_config)"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/planner/volumetric_planner_base.yaml"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/$(arg planner_config).yaml"/>
         <param name="visualize" value="$(arg visualize)" />
              
         <!-- Topics -->
