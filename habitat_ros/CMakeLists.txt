@@ -13,5 +13,6 @@ catkin_package(CATKIN_DEPENDS rospy)
 catkin_install_python(
   PROGRAMS
     app/habitat_sim_node.py
+    scripts/preprocess_replica_scenes.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
