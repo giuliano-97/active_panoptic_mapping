@@ -51,9 +51,8 @@ def create_replica_scene_config(
     )
 
     scene_dirs = [
-        p
-        for p in replica_dir_path.iterdir()
-        if p.is_dir() and p.joinpath("habitat/mesh_semantic.ply").is_file()
+        p.parents[1]
+        for p in replica_dir_path.glob("**/mesh_semantic.ply")
     ]
 
     for scene_dir_path in tqdm(scene_dirs):
