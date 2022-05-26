@@ -23,7 +23,8 @@
   <depend>habitat_ros</depend>
   <depend>voxblox</depend>
   <depend>panoptic_mapping</depend>
-  <depend>panoptic_mapping_ros</depend> 
+  <depend>panoptic_mapping_ros</depend>
+  <depend>panoptic_segmentation</depend>
   <depend>active_3d_planning_core</depend>
   <depend>active_3d_planning_ros</depend>
 </package>
