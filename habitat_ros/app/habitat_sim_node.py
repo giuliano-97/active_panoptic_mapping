@@ -106,14 +106,14 @@ class HabitatSimNode:
 
         # Global parameters
         self.scene_file_path = rospy.get_param("~scene_file", None)
-        self.initial_position = read_position_from_ros("~initial_position")
+        self.initial_position = read_position_from_ros("/initial_position")
 
         # Read environment params
         self.sim_rate = rospy.get_param("~simulator/sim_rate", 60)
         self.sensor_rate = rospy.get_param("~simulator/sensor_rate", 3)
         self.control_rate = rospy.get_param("~simulator/control_rate", 40)
         self.odom_pub_rate = rospy.get_param("~simulator/odom_pub_rate", 9)
-        self.enable_physics = rospy.get_param("simulator/enable_physics", False)
+        self.enable_physics = rospy.get_param("~simulator/enable_physics", False)
 
         # Read agent params
         self.sensor_height = rospy.get_param("~agent/sensor_height", 0.0)
