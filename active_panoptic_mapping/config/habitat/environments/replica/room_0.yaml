@@ -5,14 +5,14 @@ initial_position:
 map_bounding_volume:
   x_max: -1
   x_min: 2
-  y_max: -6
+  y_max: -7
   y_min: 1
-  z_max: 2
-  z_min: -3
+  z_max: 4
+  z_min: -1
 target_bounding_volume:
   x_max: -1
   x_min: 2
-  y_max: -6
+  y_max: -7
   y_min: 1
-  z_max: 2
-  z_min: -3
+  z_max: 4
+  z_min: -1

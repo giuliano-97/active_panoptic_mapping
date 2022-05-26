@@ -1,0 +1,21 @@
+initial_position:
+  x: -2.0
+  y: -2.0
+  z: -0.5
+  # x: 0.0
+  # y: 0.0
+  # z: 0.0
+map_bounding_volume:
+  x_max: 4
+  x_min: -10
+  y_max: 1
+  y_min: -8
+  z_max: 0.25
+  z_min: -1.0
+target_bounding_volume:
+  x_max: 4
+  x_min: -10
+  y_max: 1
+  y_min: -8
+  z_max: 0.25
+  z_min: -1.5
