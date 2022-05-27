@@ -1,0 +1,7 @@
+id_tracker:
+  use_uncertainty: false
+  classification:
+    type: panoptic_weight
+
+tsdf_integrator:
+  use_uncertainty: false    

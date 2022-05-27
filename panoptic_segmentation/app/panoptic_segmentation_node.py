@@ -43,6 +43,7 @@ class PanopticSegmentationNode:
 
         # Load params
         self.visualize = rospy.get_param("~visualize", False)
+
         self.use_groundtruth = rospy.get_param("~use_groundtruth", False)
         if self.use_groundtruth:
             self.input_img_sub = message_filters.Subscriber("~input_image", Image)
@@ -66,8 +67,15 @@ class PanopticSegmentationNode:
             )
 
         else:
+            models_dir_path = Path(rospy.get_param("~models_dir", None))
+            if models_dir_path is None or not models_dir_path.is_dir():
+                raise ValueError(f"{str(models_dir_path)} is not a valid directory!")
+
+            model_dir_path = models_dir_path / rospy.get_param("~model_name")
+            if not model_dir_path.is_dir():
+                raise ValueError(f"{str(model_dir_path)} is not a valid directory!")
+
             predictor_type = rospy.get_param("~predictor/type")
-            model_dir_path = Path(rospy.get_param("~predictor/model_dir"))
 
             # Instantiate predictor
             self.predictor = build_predictor(

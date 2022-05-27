@@ -1,0 +1,7 @@
+id_tracker:
+  use_uncertainty: true
+  classification:
+    type: variable_count_weighted
+
+tsdf_integrator:
+  use_uncertainty: true

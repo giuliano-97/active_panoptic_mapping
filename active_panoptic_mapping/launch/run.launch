@@ -5,20 +5,24 @@
     <arg name="visualize" default="true"/> 
     <arg name="has_screen" default="true"/>
     <arg name="record" default="false"/>
-    <arg name="datasets_dir" default="$(find active_panoptic_mapping)/datasets"/>
+
+    <arg name="datasets_dir" default="/media/scratch1/albanesg"/>
     <arg name="out_dir" default="$(find active_panoptic_mapping)/experiments"/>
+    <arg name="models_dir" default="$(find active_panoptic_mapping)/models"/>
 
     <!-- Habitat environment config -->
-    <arg name="scene" default="replica/frl_apartment_0"/> <!-- office_4, room_2, frl_apartment_0 -->
-    <arg name="environment_config" default="habitat/environments/$(arg scene).yaml" />
+    <arg name="dataset" default="replica"/>
+    <arg name="scene" default="frl_apartment_0"/> <!-- office_4, room_2, frl_apartment_0 -->
+    <arg name="environment_config" default="habitat/environments/$(arg dataset)/$(arg scene).yaml" />
     <arg name="habitat_config" default="habitat/replica_embodied.yaml"/>
 
     <!-- Mapper config -->
-    <arg name="mapper_config" default="mapper/variable_count.yaml"/>
+    <arg name="mapper_config" 
+        default="panoptic_fusion"/> <!-- confidence_weighted_count, panoptic_fusion -->
 
     <!-- Planner config -->
     <arg name="planner_config" 
-        default="planner/panoptic_reconstruction_planner"/> <!-- panoptic_reconstruction, reconstruction, exploration -->
+        default="panoptic_reconstruction_planner"/> <!-- panoptic_reconstruction, reconstruction, exploration -->
 
     <!-- Load environment params in global namespace -->
     <rosparam file="$(find active_panoptic_mapping)/config/$(arg environment_config)" command="load"/>
@@ -27,7 +31,7 @@
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen" required="true">
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
-        <param name="~scene_file" value="$(arg datasets_dir)/$(arg scene)/habitat/mesh_semantic.ply"/>
+        <param name="~scene_file" value="$(arg datasets_dir)/$(arg dataset)/$(arg scene)/habitat/mesh_semantic.ply"/>
         <param name="~wait" value="10"/>
 
         <!-- Topics -->
@@ -42,9 +46,11 @@
 
     <!-- Online panoptic segmentation predictor -->
     <node pkg="panoptic_segmentation" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
+
         <!-- Config -->
-        <rosparam file="$(find active_panoptic_mapping)/config/pano_seg/mask2former.yaml"/>
         <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
+        <param name="~models_dir" value="$(arg models_dir)"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/panoptic_segmentation/mask2former.yaml"/>
 
         <!-- Topics -->
         <remap from="~input_image" to="$(arg namespace)/color_image" />  
@@ -59,13 +65,14 @@
     <!-- Mapper + Planner -->
     <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping" type="active_panoptic_mapping_node" output="screen">
         <!-- Mapper -->
-        <rosparam file="$(find active_panoptic_mapping)/config/$(arg mapper_config)"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/mapper/single_tsdf_mapper_base.yaml"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/mapper/$(arg mapper_config).yaml"/>
         <param name="labels/file_name" value="$(find active_panoptic_mapping)/config/mapper/nyu40_detectron_labels.csv"/>
         <param name="data_writer/output_directory" value="$(arg out_dir)/logs"/>
         
         <!-- Planner -->
         <rosparam file="$(find active_panoptic_mapping)/config/planner/volumetric_planner_base.yaml"/>
-        <rosparam file="$(find active_panoptic_mapping)/config/$(arg planner_config).yaml"/>
+        <rosparam file="$(find active_panoptic_mapping)/config/planner/$(arg planner_config).yaml"/>
         <param name="visualize" value="$(arg visualize)" />
              
         <!-- Topics -->
@@ -88,7 +95,7 @@
 
     <!-- Rosbag -->
     <node name="rosbag_recorder" pkg="rosbag" type="record" 
-        args="-o $(arg out_dir)/bags/room_2 
+        args="-o $(arg out_dir)/bags/replay
             /tf /tf_static /trajectory_visualization 
             /$(arg namespace)/color_image /$(arg namespace)/depth /$(arg namespace)/odometry /$(arg namespace)/pose 
             /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked" 

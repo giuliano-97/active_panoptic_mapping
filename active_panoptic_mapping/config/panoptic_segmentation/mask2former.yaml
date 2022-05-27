@@ -1,0 +1,9 @@
+visualize: "true"
+
+model_name: "mask2former_swin_tiny_scannet"
+
+predictor:
+  type: "mask2former"
+
+uncertainty:
+  type: "softmax"

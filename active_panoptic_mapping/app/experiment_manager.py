@@ -22,8 +22,10 @@ class PlanningExperimentManager:
 
         self.duration = int(rospy.get_param("~duration", 1800))
         self.save_map_every_n_sec = int(rospy.get_param("~save_map_every_n_sec", 120))
-
+        self.planner_config = rospy.get_param("~planner_config")
+        self.mapper_config = rospy.get_param("~mapper_config")
         self.out_dir_path = Path(rospy.get_param("~out_dir"))
+
         self.out_dir_path.mkdir(parents=True, exist_ok=True)
         self.saved_maps_dir_path = self.out_dir_path / "maps"
         self.saved_maps_dir_path.mkdir(exist_ok=True)
@@ -42,7 +44,10 @@ class PlanningExperimentManager:
 
         cli_args = [
             str(launch_file_path),
+            "visualize:=true",
+            "has_screen:=false",
             "record:=true",
+            f"planner_config:={self.planner_config}",
             f"out_dir:={str(self.out_dir_path)}",
         ]
 
@@ -84,3 +89,4 @@ class PlanningExperimentManager:
 if __name__ == "__main__":
     em = PlanningExperimentManager()
     em.run()
+    rospy.signal_shutdown("Experiment completed successfully.")
