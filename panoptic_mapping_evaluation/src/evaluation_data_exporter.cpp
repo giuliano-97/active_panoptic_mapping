@@ -23,8 +23,10 @@ void EvaluationDataExporter::Config::setupParamsAndPrinting() {
   setupParam("output_suffix", &output_suffix);
   setupParam("is_single_tsdf", &is_single_tsdf);
   setupParam("export_mesh", &export_mesh);
-  setupParam("alignment_transformation", &alignment_transformation);
   setupParam("refine_alignment", &refine_alignment);
+  if (refine_alignment) {
+    setupParam("alignment_transformation", &alignment_transformation);
+  }
 }
 
 void EvaluationDataExporter::Config::checkParams() const {
@@ -207,7 +209,8 @@ Eigen::Matrix4d EvaluationDataExporter::computeAlignmentTransformation(
   icp.align(*icp_cloud_ptr);
 
   // Return the final transformation
-  return icp.getFinalTransformation().cast<double>() * default_alignment_transformation_ ;
+  return icp.getFinalTransformation().cast<double>() *
+         default_alignment_transformation_;
 }
 
 bool EvaluationDataExporter::exportEvaluationDataCallback(

@@ -4,22 +4,23 @@
   <arg name="config"/>
   <arg name="out_dir"/>
   <arg name="data_dir"/>
+  <arg name="scan_id"/>
   
   <arg name="namespace" default="data"/> 
+  <arg name="use_online_panoptic_segmentation" default="false"/> 
 
   <!-- ScanNet data player -->
-  <node pkg="panoptic_mapping_utils" type="scannetv2_data_player.py" name="scannetv2_data_player" output="screen">
-    <param name="scans_dir_path" value="/media/scratch1/albanesg/scans" /> 
-    <param name="scan_id" value="scene0011_01" />
-    <param name="play_rate" value="0.5" /> 
-    <param name="frame_skip" value="2" />
+  <node pkg="panoptic_mapping_evaluation" type="scannet_data_player.py" name="scannetv2_data_player" output="screen">
+    <param name="scans_dir_path" value="$(arg data_dir)" /> 
+    <param name="scan_id" value="$(arg scan_id)" />
+    <param name="play_rate" value="0.1" /> 
     <param name="global_frame_name" value="world" /> 
     <param name="sensor_frame_name" value="depth_camera" /> 
     <param name="wait" value="true" /> 
     <param name="use_uncertainty" value="true" />
     <param name="image_width" value="320" />
     <param name="image_height" value="240"/>
-    <!-- <param name="max_frames" value="100"/> -->
+    <param name="panoptic_seg_dir" value="mask2former_swin_tiny"/>
             
     <remap from="~color_image" to="$(arg namespace)/color_image" />  
     <remap from="~depth_image" to="$(arg namespace)/depth_image" />  
@@ -34,9 +35,11 @@
     <rosparam file="$(find panoptic_mapping_evaluation)/config/mapper/single_tsdf_base.yaml"/>
     <rosparam file="$(arg config)" command="load"/>
     <param name="shutdown_when_finished" value="true"/>
+
+    <!-- Override experiment specific parameters -->
     <param name="save_map_path_when_finished" value="$(arg out_dir)/final"/>
-    <!-- Override default output dir-->
-    <param name="~data_writer/log_data_writer/output_directory" value="$(arg out_dir)"/>
+    <param name="labels/file_name" value="$(find panoptic_mapping_evaluation)/config/mapper/nyu40_detectron_labels.csv"/>
+    <param name="data_writer/output_directory" value="$(arg out_dir)"/>
      
     <!-- Input -->
     <remap from="color_image_in" to="$(arg namespace)/color_image"/>

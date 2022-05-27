@@ -16,6 +16,11 @@ class EvaluationManager:
         rospy.init_node("evaluation_manager_node")
 
         self.data_dir_path = Path(rospy.get_param("~data_dir"))
+        self.experiment_type = rospy.get_param("~experiment_type", "mapping").lower()
+
+        if self.experiment_type not in ["mapping", "planning"]:
+            raise ValueError("Invalid experiment type!")
+
         self.gt_vertex_labels_file_path = Path(
             rospy.get_param("~ground_truth_vertex_labels_file")
         )
@@ -86,9 +91,14 @@ class EvaluationManager:
             )
 
             # Compute metrics
-            metrics_dict = {
-                "MapID": map_file_path.parent.name + "_" + map_file_path.name
-            }
+            method = (
+                map_file_path.parent.name
+                if self.experiment_type == "mapping"
+                else map_file_path.parents[1].name
+            )
+
+            metrics_dict = {"Method": method, "MapID": map_file_path.stem}
+            
             metrics_dict.update(
                 panoptic_quality(
                     gt_labels=covered_gt_vertex_labels,

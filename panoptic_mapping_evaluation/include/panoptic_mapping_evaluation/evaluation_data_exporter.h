@@ -82,7 +82,6 @@ class EvaluationDataExporter {
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr gt_cloud_ptr_;
   Eigen::Matrix4d default_alignment_transformation_;
-  
 };
 
 #endif  // PANOPTIC_MAPPING_EVALUATIONVALUATION_DATA_EXPORTER_H_

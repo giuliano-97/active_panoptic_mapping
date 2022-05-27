@@ -12,8 +12,7 @@ max_input_queue_length: 1000
 ros_spinning_threads: 8
 
 labels:
-  type: csv
-  file_name: /media/giuliano/wd_ssd/datasets/scannetv2/nyu40_detectron_labels.csv 
+  type: csv 
 
 camera:
   verbosity: 1
@@ -40,8 +39,6 @@ id_tracker:
   min_new_instance_area: 0.01
   tracking_metric: IoU # IoU, overlap
   match_acceptance_threshold: 0.25
-  classification:
-    type: panoptic_weight
 
 tsdf_integrator:
   type: single_tsdf
@@ -108,5 +105,5 @@ visualization:
 data_writer:
   type: log
   verbosity: 1
-  output_directory: /tmp
+  output_directory: ""
     

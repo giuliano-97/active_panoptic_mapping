@@ -74,7 +74,8 @@ class MappingExperimentManager:
         cli_args = [
             str(launch_file_path),
             f"config:={str(mapper_config_file_path)}",
-            f"data_dir:={str(scan_dir_path)}",
+            f"data_dir:={str(scan_dir_path.parent)}",
+            f"scan_id:={str(scan_dir_path.name)}",
             f"out_dir:={str(out_dir_path)}",
         ]
 
