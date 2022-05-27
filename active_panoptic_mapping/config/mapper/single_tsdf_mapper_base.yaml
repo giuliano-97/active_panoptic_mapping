@@ -1,0 +1,113 @@
+# General Params
+verbosity: 0
+is_single_tsdf: true
+single_tsdf_tracked_instance_type: 0
+use_threadsafe_submap_collection: true
+use_transform_caching: true
+transform_lookup_time: 0.1
+global_frame_name: world
+visualization_interval: -1.0
+data_logging_interval: -1.0
+print_timing_interval: 0.0
+max_input_queue_length: 1000
+ros_spinning_threads: 8
+
+labels:
+  type: csv
+  file_name: ""
+
+camera:
+  verbosity: 0
+  width: 320  # Px
+  height: 240
+  vx: 160
+  vy: 120
+  fx: 160
+  fy: 120
+  max_range: 5  # m
+  min_range: 0.1
+
+id_tracker:
+  type: single_tsdf_panoptic # ground_truth, projective, detectron, single_tsdf
+  verbosity: 1
+
+  voxel_size: 0.05
+  truncation_distance: -2
+  voxels_per_side: 16
+  use_class_for_instance_tracking: false
+  use_one_to_one_matching: false
+  use_uncertainty: false
+  min_new_instance_area: 0.01
+  tracking_metric: IoU # IoU, overlap
+  match_acceptance_threshold: 0.25
+  classification:
+    type: variable_count
+
+tsdf_integrator:
+  type: single_tsdf
+  verbosity: 0
+
+  # Projective
+  use_weight_dropoff: true
+  use_uncertainty: false
+  max_weight: 10000
+  interpolation_method: adaptive # nearest, bilinear, adaptive
+  integration_threads: 8
+
+submap_allocator:
+  type: semantic # semantic
+  verbosity: 0
+
+  # submaps
+  voxels_per_side: &voxels_per_side 16
+  truncation_distance: -2 # negative = #vs
+  use_class_layer: true
+
+  # Meshing
+  clear_foreign_voxels: false
+  required_belonging_corners: 1
+
+  # Semantic
+  small_instance_voxel_size: 0.05
+  medium_instance_voxel_size: 0.05
+  large_instance_voxel_size: 0.05
+  background_voxel_size: 0.05
+  unknown_voxel_size: 0.05
+
+freespace_allocator:
+  type: monolithic # monolithic
+  verbosity: 0
+  voxels_per_side: *voxels_per_side
+  truncation_distance: -2
+  voxel_size: 0.3
+
+visualization:
+  submaps:
+    type: single_tsdf
+    verbosity: 0
+    color_mode: uncertainty # color, normals, classes, instances, classification, uncertainty
+    visualization_mode: all # all
+    submap_color_discretization: 20
+    visualize_mesh: true
+    visualize_tsdf_blocks: true
+    visualize_free_space: true
+    visualize_bounding_volumes: true
+    include_free_space: true
+    mesh_min_weight: 0.000001
+
+  planning:
+    verbosity: 0
+    visualize_slice: true
+    slice_resolution: 0.1
+    slice_height: -0.5
+
+  tracking:
+    verbosity: 0
+    visualize_tracking: true
+
+data_writer:
+  type: log
+  verbosity: 0
+  output_directory: ""
+
+    

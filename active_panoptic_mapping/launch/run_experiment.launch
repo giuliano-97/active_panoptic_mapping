@@ -1,11 +1,14 @@
 <launch>
-  <arg name="experiment_name" default="panoptic_reconstruction"/>
-  <arg name="duration" default="600"/>
+  <arg name="experiment_name" default="pano_rec_variable_count_gt_pano_seg"/>
+  <arg name="n_reps" default="5"/>
+  <arg name="duration" default="1200"/>
   <arg name="save_map_every_n_sec" default="60"/>
   <arg name="experiments_dir" default="$(optenv OUT_DIR /media/scratch1/albanesg/planning_experiments)"/>
   <arg name="planner_config" default="panoptic_reconstruction_planner"/>
-  <arg name="mapper_config" default="panoptic_fusion"/>
+  <arg name="mapper_config" default="variable_count"/>
   <node name="planning_experiment_manager" pkg="active_panoptic_mapping" type="experiment_manager.py" output="screen">
+    <param name="experiment_name" value="$(arg experiment_name)"/>
+    <param name="n_reps" value="$(arg n_reps)"/>
     <param name="duration" value="$(arg duration)"/>
     <param name="save_map_every_n_sec" value="$(arg save_map_every_n_sec)"/>
     <param name="planner_config" value="$(arg planner_config)"/>

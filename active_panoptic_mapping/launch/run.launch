@@ -32,7 +32,7 @@
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
         <param name="~scene_file" value="$(arg datasets_dir)/$(arg dataset)/$(arg scene)/habitat/mesh_semantic.ply"/>
-        <param name="~wait" value="10"/>
+        <param name="~wait" value="true"/>
 
         <!-- Topics -->
         <remap from="~rgb" to="$(arg namespace)/color_image"/>
@@ -98,6 +98,11 @@
         args="-o $(arg out_dir)/bags/replay
             /tf /tf_static /trajectory_visualization 
             /$(arg namespace)/color_image /$(arg namespace)/depth /$(arg namespace)/odometry /$(arg namespace)/pose 
-            /active_panoptic_mapping_node/visualization/planning/planning_slice /active_panoptic_mapping_node/visualization/submaps/bounding_volumes /active_panoptic_mapping_node/visualization/submaps/free_space_tsdf /active_panoptic_mapping_node/visualization/submaps/mesh /active_panoptic_mapping_node/visualization/submaps/tsdf_blocks /active_panoptic_mapping_node/visualization/tracking/color /active_panoptic_mapping_node/visualization/tracking/input /active_panoptic_mapping_node/visualization/tracking/rendered /active_panoptic_mapping_node/visualization/tracking/tracked" 
+            /active_panoptic_mapping_node/visualization/submaps/mesh 
+            /active_panoptic_mapping_node/visualization/tracking/color 
+            /active_panoptic_mapping_node/visualization/tracking/input 
+            /active_panoptic_mapping_node/visualization/tracking/rendered 
+            /active_panoptic_mapping_node/visualization/tracking/tracked
+            /active_panoptic_mapping_node/visualization/tracking/spatial_uncertainty" 
         if="$(arg record)"/>
 </launch>

@@ -123,18 +123,10 @@ class HabitatSimNode:
 
         self.wait = rospy.get_param("~wait", False)
 
-        self.toggle_pub_sensor_data_srv = rospy.Service(
-            "~toggle_pub_sensor_data",
-            SetBool,
-            self.toggle_pub_sensor_data_srv_cb,
-        )
-
         if isinstance(self.wait, bool) and self.wait == True:
             self.pub_sensor_data = False
         else:
             self.pub_sensor_data = True
-
-        self.waypoints = Queue()
 
         self.async_sim = AsyncSimulator(
             scene_file_path=self.scene_file_path,
@@ -148,6 +140,7 @@ class HabitatSimNode:
         )
 
         # Instantiate and configure position controller to track pose commands
+        self.waypoints = Queue()
         position_controller_params = read_position_controller_params_from_ros()
         self.position_controller = PIDPositionController(position_controller_params)
         self.position_controller_thread = Thread(target=self._run_position_controller)
@@ -212,6 +205,12 @@ class HabitatSimNode:
             MultiDOFJointTrajectory,
             self.cmd_trajectory_callback,
             queue_size=10,
+        )
+
+        self.toggle_pub_sensor_data_srv = rospy.Service(
+            "~toggle_pub_sensor_data",
+            SetBool,
+            self.toggle_pub_sensor_data_srv_cb,
         )
 
     def toggle_pub_sensor_data_srv_cb(self, request: SetBoolRequest):
