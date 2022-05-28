@@ -94,11 +94,10 @@ class EvaluationManager:
             method = (
                 map_file_path.parent.name
                 if self.experiment_type == "mapping"
-                else map_file_path.parents[1].name
+                else map_file_path.parents[2].name
             )
-
             metrics_dict = {"Method": method, "MapID": map_file_path.stem}
-            
+
             metrics_dict.update(
                 panoptic_quality(
                     gt_labels=covered_gt_vertex_labels,
