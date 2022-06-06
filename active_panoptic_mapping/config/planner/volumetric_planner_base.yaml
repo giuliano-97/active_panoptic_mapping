@@ -17,7 +17,7 @@ highlight_executed_trajectory: true
 map:
   type: "PanopticMap"
   voxel_size: 0.1
-  check_collision_distance: 1.0
+  check_collision_distance: 0.5
 
 system_constraints:
   v_max: 1.0
@@ -29,7 +29,7 @@ system_constraints:
 trajectory_generator:
   collision_optimistic: false
   bounding_volume_args: "/map_bounding_volume"
-  clearing_radius: 0.7
+  clearing_radius: 0.8
 
   type: "RRTStar"
   all_semgents_feasible: false
@@ -51,7 +51,7 @@ trajectory_generator:
   rewire_intermediate: true
   reinsert_root: true
   max_rewire_range: 1.6
-  max_density_range: 0.0 # Only add points if there are no points closer than this
+  max_density_range: 0.5 # Only add points if there are no points closer than this
   n_neighbors: 20
 
   generator_updater:

@@ -209,8 +209,13 @@ double PanopticMap::getClassVoxelProbability(const Eigen::Vector3d& point) {
 
   const panoptic_mapping::ClassVoxel& class_voxel =
       class_block->getVoxelByCoordinates(position);
+  
+  const int id = class_voxel.getBelongingID();
+  if(id == 0) {
+    return -1.0;
+  }
 
-  return class_voxel.getBelongingProbability();
+  return class_voxel.getProbability(id);
 }
 
 }  // namespace map

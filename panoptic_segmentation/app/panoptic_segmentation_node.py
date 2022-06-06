@@ -1,4 +1,5 @@
 from pathlib import Path
+from unicodedata import category
 
 import numpy as np
 import rospy
@@ -13,6 +14,7 @@ from panoptic_segmentation.constants import (
     NYU40_IGNORE_LABEL,
     PANOPTIC_LABEL_DIVISOR,
     NYU40_THING_CLASSES,
+    SCANNET_NYU40_EVALUATION_CLASSES,
 )
 from panoptic_segmentation.visualization import colorize_panoptic_segmentation
 
@@ -118,7 +120,7 @@ class PanopticSegmentationNode:
         segments_info = []
         for id in np.unique(gt_pano_seg):
             category_id = id // PANOPTIC_LABEL_DIVISOR
-            if category_id == NYU40_IGNORE_LABEL:
+            if category_id == NYU40_IGNORE_LABEL or category_id not in SCANNET_NYU40_EVALUATION_CLASSES:
                 gt_pano_seg[gt_pano_seg == id] = 0
                 continue
             sinfo = {
@@ -128,13 +130,22 @@ class PanopticSegmentationNode:
             }
             segments_info.append(sinfo)
 
+        # Create fake confidence scores
+        uncertainty = np.where(gt_pano_seg == 0, 0.0, 0.9).astype(np.float32)       
+
+        # Prepare messages
         header = Header(stamp=input_img_msg.header.stamp, frame_id="depth_cam")
         pano_seg_msg = self.cv_bridge.cv2_to_imgmsg(gt_pano_seg.astype(np.uint16))
         pano_seg_msg.header = header
         labels_msg = segments_info_to_labels_msg(segments_info)
         labels_msg.header = header
+        uncertainty_msg = self.cv_bridge.cv2_to_imgmsg(uncertainty)
+        uncertainty_msg.header = header
+
+        # Publish messages
         self.pano_seg_pub.publish(pano_seg_msg)
         self.labels_pub.publish(labels_msg)
+        self.uncertainty_pub.publish(uncertainty_msg)
 
         if self.visualize:
             pano_seg_vis, _ = colorize_panoptic_segmentation(gt_pano_seg)

@@ -24,18 +24,12 @@ double ClassConfidenceEvaluator::getVoxelValue(const Eigen::Vector3d& voxel,
   if (voxel_state == map::TSDFMap::OCCUPIED) {
     // Surface voxel
 
+
     double probability = map_->getClassVoxelProbability(voxel);
     // If the confidence is negative, something is wrong and we just return zero
     if (probability < 0) {
       return 0.0;
     }
-
-    // TSDF gain
-    // double z = (voxel - origin).norm();
-    // double spanned_angle = 2.0 * atan2(c_voxel_size_, z * 2.0);
-    // double new_weight = std::pow(spanned_angle, 2.0) /
-    //                     (p_ray_angle_x_ * p_ray_angle_y_) / std::pow(z, 2.0);
-    // double tsdf_gain = new_weight / (new_weight + map_->getVoxelWeight(voxel));
 
     // Basic semantic - probability of the voxel having a different label
     double class_gain =
@@ -43,7 +37,6 @@ double ClassConfidenceEvaluator::getVoxelValue(const Eigen::Vector3d& voxel,
         std::sqrt(std::max(probability, p_min_class_probability_));
 
     double gain = class_gain;
-    // gain = 0.5 * gain + 0.5 * tsdf_gain;
 
     if (gain > p_min_impact_factor_) {
       return gain;
