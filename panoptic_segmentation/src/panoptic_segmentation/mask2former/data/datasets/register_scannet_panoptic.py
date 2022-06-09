@@ -1,4 +1,5 @@
 import json
+from multiprocessing.sharedctypes import Value
 import os
 from pathlib import Path
 from typing import List, Dict
@@ -16,17 +17,20 @@ def get_scannet_frames_25k_panoptic_dataset_items(
     metadata,
 ) -> List[Dict]:
     def _convert_category_id(segment_info, meta):
+        new_segment_info = segment_info.copy()
         if segment_info["category_id"] in meta["thing_dataset_id_to_contiguous_id"]:
-            segment_info["category_id"] = meta["thing_dataset_id_to_contiguous_id"][
+            new_segment_info["category_id"] = meta["thing_dataset_id_to_contiguous_id"][
                 segment_info["category_id"]
             ]
-            segment_info["isthing"] = True
+            new_segment_info["isthing"] = True
+        elif segment_info["category_id"] in meta["stuff_dataset_id_to_contiguous_id"]:
+            new_segment_info["category_id"] = meta["stuff_dataset_id_to_contiguous_id"][
+                segment_info["category_id"]
+            ]
+            new_segment_info["isthing"] = False
         else:
-            segment_info["category_id"] = meta["stuff_dataset_id_to_contiguous_id"][
-                segment_info["category_id"]
-            ]
-            segment_info["isthing"] = False
-        return segment_info
+            raise ValueError(f"Invalid category id: {segment_info['category_id']}")
+        return new_segment_info
 
     # Get images info - convert to dict for easier lookup - and annotations
     images_info_dict = {item["id"]: item for item in images_info_list}
@@ -129,14 +133,11 @@ def register_scannet_frames_25k_panoptic(scannet_frames_25k_dir_path):
     with scannet_panoptic_json_file_path.open("r") as f:
         scannet_panoptic_info = json.load(f)
 
-    scannetv2_train_split_file_path = Path(
-        "/cluster/home/albanesg/mt_ipp_panoptic_mapping/ScanNet/Tasks/Benchmark/scannetv2_train.txt"
-    )
+    scannetv2_train_split_file_path = Path(__file__).parent / "scannetv2_train.txt"
     with scannetv2_train_split_file_path.open("r") as f:
         scannetv2_train_scans = [l.rstrip("\n") for l in f.readlines()]
-    scannetv2_val_split_file_path = Path(
-        "/cluster/home/albanesg/mt_ipp_panoptic_mapping/ScanNet/Tasks/Benchmark/scannetv2_val.txt"
-    )
+
+    scannetv2_val_split_file_path = Path(__file__).parent / "scannetv2_val.txt"
     with scannetv2_val_split_file_path.open("r") as f:
         scannetv2_val_scans = [l.rstrip("\n") for l in f.readlines()]
 
