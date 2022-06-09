@@ -19,3 +19,7 @@ def build_uncertainty_estimator(
         from .softmax import Softmax
 
         return Softmax()
+    elif estimator_type.lower() == "histogram_binning":
+        from .histogram_binning import HistogramBinning
+
+        return HistogramBinning(**kwargs)
