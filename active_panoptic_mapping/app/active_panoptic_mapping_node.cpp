@@ -42,11 +42,10 @@ int main(int argc, char** argv) {
   auto map =
       dynamic_cast<active_3d_planning::map::PanopticMap*>(&planner.getMap());
   if (!map) {
-    LOG(FATAL) << "The active change detection node can only be run with a "
+    LOG(FATAL) << "The active panoptic mapping node can only be run with a "
                   "panoptic map.";
     return 1;
   }
-  // TODO(schmluk): Clean this up.
   map->setMap(mapper);
 
   // Spin.

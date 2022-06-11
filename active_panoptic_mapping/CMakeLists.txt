@@ -10,6 +10,7 @@ cs_add_library(${PROJECT_NAME}
   src/planner/panoptic_map.cpp
   src/planner/trajectory_evaluator/voxel_class_evaluator.cpp
   src/planner/trajectory_evaluator/class_confidence_evaluator.cpp
+  src/planner/trajectory_evaluator/weighted_tsdf_entropy_evaluator.cpp
 )
 
 cs_add_executable(active_panoptic_mapping_node
