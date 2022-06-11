@@ -13,7 +13,7 @@
 int main(int argc, char** argv) {
   // Always add these arguments for proper logging.
   config_utilities::RequiredArguments ra(
-      &argc, &argv, {"--logtostderr", "--colorlogtostderr"});
+      &argc, &argv, {"--alsologtostderr", "--colorlogtostderr"});
 
   // Setup logging.
   google::InitGoogleLogging(argv[0]);
