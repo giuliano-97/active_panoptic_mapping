@@ -43,7 +43,7 @@ double WeightedTSDFEntropyEvaluator::getVoxelValue(
     double spanned_angle = 2.0 * atan2(c_voxel_size_, z * 2.0);
     double new_weight = std::pow(spanned_angle, 2.0) /
                         (p_ray_angle_x_ * p_ray_angle_y_) / std::pow(z, 2.0);
-    double new_normalized_weight = -new_weight * std::log2(new_weight);
+    double new_normalized_weight = new_weight / map_->getMaximumWeight();
     double new_tsdf_entropy =
         -new_normalized_weight * std::log2(new_normalized_weight);
 
