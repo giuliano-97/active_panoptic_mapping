@@ -10,7 +10,8 @@ trajectory_evaluator:
     update_sections_separate: false
 
     following_evaluator:
-      type: "ClassConfidenceEvaluator"
+      type: "PanopticUncertaintyEvaluator"
+      min_voxel_confidence: 0.1
       visualize_sensor_view: true
       accurate_frontiers: true
       checking_distance: 2.0
