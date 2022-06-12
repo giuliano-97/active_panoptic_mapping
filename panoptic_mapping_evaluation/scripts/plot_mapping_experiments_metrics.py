@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 
 _EVALUATION_METRICS = ["PQ", "PQ_th", "PQ_st", "SQ", "RQ", "mIoU"]
+_X_AXIS_NAME = "Metric"
+_Y_AXIS_NAME = "Value (%)"
 
 
 def main(experiments_dir_path: Path):
@@ -28,23 +30,26 @@ def main(experiments_dir_path: Path):
         pd.concat(metrics_data, axis=0).groupby("Method").mean().reset_index()
     )
 
+    # Convert values to percentages
+    aggregated_metrics_df[_EVALUATION_METRICS] *= 100
+
     sns.set_style("darkgrid")
     sns.set(font_scale=1.5)
-    for metrics_subset in [["PQ", "PQ_th", "PQ_st"], ["SQ", "RQ"], ["mIoU"]]:
+    for metrics_subset in [["PQ", "SQ", "RQ", "mIoU"]]:
         aggregated_metrics_subset_df_long = pd.melt(
             aggregated_metrics_df[["Method"] + metrics_subset],
             id_vars=["Method"],
-            var_name="metric",
-            value_name="value",
+            var_name=_X_AXIS_NAME,
+            value_name=_Y_AXIS_NAME,
         )
 
         # Create new figure
         plt.figure(figsize=(16, 9))
-        plt.ylim(0.0, 1.0)
+        plt.ylim(0.0, 100.0)
 
         sns.barplot(
-            x="metric",
-            y="value",
+            x=_X_AXIS_NAME,
+            y=_Y_AXIS_NAME,
             hue="Method",
             data=aggregated_metrics_subset_df_long,
         )

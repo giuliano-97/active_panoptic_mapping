@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from plyfile import PlyData, PlyElement
 
-from panoptic_mapping_evaluation.constants import NYU40_COLOR_PALETTE
+from panoptic_mapping_evaluation.constants import PANOPTIC_LABEL_DIVISOR
 from panoptic_mapping_evaluation.visualization import colorize_panoptic_labels
 
 
@@ -32,7 +32,7 @@ def visualize_vertex_labels(
             "The number of labels and the number of vertices do not match!"
         )
 
-    colors, _ = colorize_panoptic_labels(labels)
+    colors, _ = colorize_panoptic_labels(labels) 
 
     # Generate vertex colors
     gt_mesh["vertex"].data["red"] = colors[:, 0]
@@ -46,7 +46,7 @@ def visualize_vertex_labels(
             PlyElement.describe(gt_mesh["face"].data, "face"),
         ],
         text=False,
-    ).write(vertex_labels_file_path.with_suffix(".mesh.ply"))
+    ).write(vertex_labels_file_path.with_suffix(".semantic.ply"))
 
 
 def _parse_args():

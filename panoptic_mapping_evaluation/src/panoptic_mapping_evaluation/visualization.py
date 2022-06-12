@@ -96,3 +96,7 @@ def colorize_panoptic_labels(panoptic_labels):
                 colors[instance_mask] = random_color
 
     return colors, used_colors
+
+
+def colorize_semantic_labels(semantic_labels):
+    return np.array([NYU40_COLOR_PALETTE[s] for s in semantic_labels], dtype=np.uint8)
