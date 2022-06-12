@@ -11,21 +11,26 @@ from tqdm import tqdm
 
 
 def create_replica_ground_truth_vertex_labels(
-    replica_dir_path: Path,
+    replica_dir_path: Path, use_decimated_mesh: bool
 ):
     if not replica_dir_path.is_dir():
         raise FileNotFoundError(f"{str(replica_dir_path)} is not a valid directory!")
 
-    scene_dirs = [
-        p
-        for p in replica_dir_path.iterdir()
-        if p.is_dir() and p.joinpath("habitat").is_dir()
-    ]
+    mesh_semantic_file_name = (
+        "mesh_semantic_decimated.ply" if use_decimated_mesh else "mesh_semantic.ply"
+    )
+
+    scene_dirs = []
+    for mesh_semantic_file_path in replica_dir_path.glob(
+        f"**/{mesh_semantic_file_name}"
+    ):
+        if mesh_semantic_file_path.parent.name == "habitat":
+            scene_dirs.append(mesh_semantic_file_path.parents[1])
 
     for scene_dir_path in tqdm(scene_dirs):
         print(f"Creating labels for scene {scene_dir_path.name}")
 
-        mesh_semantic_file_path = scene_dir_path / "habitat" / "mesh_semantic.ply"
+        mesh_semantic_file_path = scene_dir_path / "habitat" / mesh_semantic_file_name
         info_semantic_file_path = scene_dir_path / "habitat" / "info_semantic.json"
 
         print("Loading semantic mesh")
@@ -79,7 +84,7 @@ def create_replica_ground_truth_vertex_labels(
 
         print("Saving result to file")
         vertex_panoptic_labels_file_path = (
-            scene_dir_path / "habitat" / "vertex_panoptic_labels.txt"
+            scene_dir_path / "habitat" / "panoptic_vertex_labels.txt"
         )
         with open(vertex_panoptic_labels_file_path, "w") as f:
             np.savetxt(f, vertex_panoptic_labels, fmt="%d")
@@ -98,6 +103,12 @@ def _parse_args():
         "replica_dir",
         type=lambda p: Path(p).absolute(),
         help="Path to the directory containing the replica dataset.",
+    )
+
+    parser.add_argument(
+        "--use-decimated-mesh",
+        action="store_true",
+        help="Whether the original or decimated semantic mesh should be used.",
     )
 
     return parser.parse_args()
@@ -211,4 +222,7 @@ REPLICA_TO_NYU40 = [
 
 if __name__ == "__main__":
     args = _parse_args()
-    create_replica_ground_truth_vertex_labels(args.replica_dir)
+    create_replica_ground_truth_vertex_labels(
+        args.replica_dir,
+        args.use_decimated_mesh,
+    )
