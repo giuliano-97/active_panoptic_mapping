@@ -1,6 +1,7 @@
 import numpy as np
 
 from .constants import (
+    NYU40_IGNORE_LABEL,
     PQ_KEY,
     PQ_THING_KEY,
     PQ_STUFF_KEY,
@@ -9,9 +10,11 @@ from .constants import (
     TP_KEY,
     FN_KEY,
     FP_KEY,
+    TP_IOU_THRESHOLD,
     MIOU_KEY,
     NYU40_THING_CLASSES,
     NYU40_STUFF_CLASSES,
+    NYU40_CLASS_IDS_TO_NAMES,
     SCANNET_NYU40_EVALUATION_CLASSES,
     NYU40_NUM_CLASSES,
     PANOPTIC_LABEL_DIVISOR,
@@ -26,45 +29,55 @@ _EVAL_CLASSES_MASK = np.isin(
 )
 
 
-def mean_iou(gt_labels: np.ndarray, pred_labels: np.ndarray):
+def mean_iou(
+    gt_labels: np.ndarray,
+    pred_labels: np.ndarray,
+    return_per_class_iou: bool = False,
+):
     iou_per_class = np.zeros(NYU40_NUM_CLASSES, dtype=np.float32)
 
     # We evaluate IoU only over class labels
     gt_semantic_labels = gt_labels // PANOPTIC_LABEL_DIVISOR
     pred_semantic_labels = pred_labels // PANOPTIC_LABEL_DIVISOR
 
-    # Only evaluate over classes that appear in the GT, are not the ignore label
-    # and are in the list of classes on which one should evaluate
-    valid_classes = np.unique(gt_semantic_labels)
-    valid_classes = valid_classes[
-        np.isin(
-            valid_classes,
-            SCANNET_NYU40_EVALUATION_CLASSES + [NYU40_NUM_CLASSES],
-        )
-    ]
+    # Ignore areas were ground truth is void
+    pred_semantic_labels[gt_semantic_labels == NYU40_IGNORE_LABEL] = NYU40_IGNORE_LABEL
 
-    if valid_classes.size == 0:
+    # Compute IoU for every visible class in the gt
+    visible_classes = np.unique(gt_semantic_labels)
+    if visible_classes.size == 0:
         return {MIOU_KEY: 0}
 
-    # Compute IoU for every valid class
-    for class_id in valid_classes:
+    for class_id in visible_classes:
         gt_class_mask = gt_semantic_labels == class_id
         pred_class_mask = pred_semantic_labels == class_id
 
+        # Compute iou
         intersection_area = np.count_nonzero(gt_class_mask & pred_class_mask)
         union_area = np.count_nonzero(gt_class_mask | pred_class_mask)
 
-        iou_per_class[class_id] = intersection_area / union_area
+        iou = intersection_area / union_area
 
-    # Compute mean iou
-    miou = np.mean(np.take(iou_per_class, valid_classes))
+        if iou > 1.0:
+            raise ValueError("IoU cannot be larger than 1!")
 
-    return {MIOU_KEY: miou}
+        iou_per_class[class_id] = iou
+
+    if return_per_class_iou:
+        result_per_class = {
+            f"IoU_{NYU40_CLASS_IDS_TO_NAMES[c]}": iou_per_class[c]
+            for c in NYU40_CLASS_IDS_TO_NAMES.keys()
+        }
+        result_mean = {f"{MIOU_KEY}": np.mean(np.take(iou_per_class, visible_classes))}
+        return result_mean, result_per_class
+    else:
+        return {f"{MIOU_KEY}": np.mean(np.take(iou_per_class, visible_classes))}
 
 
 def panoptic_quality(
     gt_labels: np.ndarray,
     pred_labels: np.ndarray,
+    match_iou_threshold: float = TP_IOU_THRESHOLD,
 ):
     if gt_labels.shape != pred_labels.shape:
         raise ValueError("Label arrays must have the same shape!")
@@ -72,6 +85,7 @@ def panoptic_quality(
     matching_result = match_segments(
         gt_labels=gt_labels,
         pred_labels=pred_labels,
+        match_iou_threshold=match_iou_threshold,
     )
 
     iou_per_class = matching_result.iou_per_class
