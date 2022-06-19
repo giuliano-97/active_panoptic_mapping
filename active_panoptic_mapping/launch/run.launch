@@ -3,7 +3,7 @@
     <arg name="namespace" default="active_panoptic_mapping"/>
 
     <arg name="visualize" default="true"/> 
-    <arg name="has_screen" default="true"/>
+    <arg name="has_screen" default="false"/>
     <arg name="record" default="false"/>
 
     <arg name="datasets_dir" default="/media/scratch1/albanesg"/>
@@ -18,21 +18,21 @@
 
     <!-- Mapper config -->
     <arg name="mapper_config" 
-        default="panoptic_fusion"/> <!-- confidence_weighted_count, panoptic_fusion -->
+        default="confidence_weighted_count"/> <!-- confidence_weighted_count, panoptic_fusion -->
 
     <!-- Planner config -->
     <arg name="planner_config" 
-        default="panoptic_reconstruction_planner"/> <!-- panoptic_reconstruction, reconstruction, exploration -->
+        default="panoptic_uncertainty"/> <!-- exploration, reconstruction, panoptic_uncertainty, uncertainty_weighted_voxel_weight, uncertainty_weighted_tsdf_entropy -->
 
     <!-- Load environment params in global namespace -->
     <rosparam file="$(find active_panoptic_mapping)/config/$(arg environment_config)" command="load"/>
     
     <!-- Habitat client node -->
-    <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen" required="true">
+    <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="log" required="true">
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
         <param name="~scene_file" value="$(arg datasets_dir)/$(arg dataset)/$(arg scene)/habitat/mesh_semantic.ply"/>
-        <param name="~wait" value="true"/>
+        <param name="~wait" value="false"/>
 
         <!-- Topics -->
         <remap from="~rgb" to="$(arg namespace)/color_image"/>
@@ -45,10 +45,10 @@
     </node>
 
     <!-- Online panoptic segmentation predictor -->
-    <node pkg="panoptic_segmentation" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
+    <node pkg="panoptic_segmentation" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="log">
 
         <!-- Config -->
-        <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
+        <param name="~use_groundtruth" value="false"/> <!-- Use gt for debugging on machine with no GPU -->
         <param name="~models_dir" value="$(arg models_dir)"/>
         <rosparam file="$(find active_panoptic_mapping)/config/panoptic_segmentation/mask2former.yaml"/>
 
@@ -63,7 +63,8 @@
     </node>
 
     <!-- Mapper + Planner -->
-    <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping" type="active_panoptic_mapping_node" output="screen">
+    <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping" type="active_panoptic_mapping_node" 
+        output="log" args="--log_dir=$(arg out_dir)/logs">
         <!-- Mapper -->
         <rosparam file="$(find active_panoptic_mapping)/config/mapper/single_tsdf_mapper_base.yaml"/>
         <rosparam file="$(find active_panoptic_mapping)/config/mapper/$(arg mapper_config).yaml"/>
@@ -88,7 +89,7 @@
     </node>   
 
     <!-- Static Transforms -->
-    <node pkg="tf" type="static_transform_publisher" name="tf_odom_world" args="0 0 0 0 0 0 1 /world /odom 100"/>  
+    <node pkg="tf" type="static_transform_publisher" name="tf_odom_world" args="0 0 0 0 0 0 1 /world /odom 100" output="screen"/>  
 
     <!-- RViz -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping)/rviz/devel.rviz" if="$(eval arg('visualize') and arg('has_screen'))"/>   
