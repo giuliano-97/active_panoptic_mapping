@@ -19,6 +19,11 @@ do
   fi
 
   echo "Evuluating ${EXPERIMENT_NAME}."
+  if [ -f "${DIR}/metrics.csv" ]
+  then
+    echo "${EXPERIMENT_NAME} has already been evaluated. Skipped."
+    continue
+  fi
   
   if [ ! -d ${SCAN_GT_DIR} ]
   then
@@ -29,5 +34,5 @@ do
     experiments_dir:=${DIR} \
     experiment_type:="planning" \
     ground_truth_vertex_labels_file:=${REPLICA_SCENE_DIR}/habitat/panoptic_vertex_labels.txt \
-    ground_truth_pointcloud_file:=${REPLICA_SCENE_DIR}/habitat/mesh_semantic.ply
+    ground_truth_pointcloud_file:=${REPLICA_SCENE_DIR}/habitat/mesh_semantic_decimated.ply
 done
