@@ -1,10 +1,13 @@
 <launch>
+    <arg name="visualize" default="false"/>
 
-    <param name="scene_file" value="/media/giuliano/wd_ssd/datasets/replica/room_2/habitat/mesh_semantic.ply"/>
+    <arg name="scene_file" default="/media/giuliano/wd_ssd/datasets/replica/room_2/habitat/mesh_semantic_backup.ply"/>
 
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
         <rosparam file="$(find habitat_ros)/config/default.yaml" command="load" />
+        <param name="~wait" value="false"/>
+        <param name="~scene_file" value="$(arg scene_file)"/>
     </node>
 
-    <node pkg="rviz" name="rviz" type="rviz" output="screen" args="-d $(find habitat_ros)/rviz/test.rviz"/>
+    <node pkg="rviz" name="rviz" type="rviz" output="screen" args="-d $(find habitat_ros)/rviz/test.rviz" if="$(arg visualize)"/>
 </launch>
