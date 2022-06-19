@@ -4,7 +4,7 @@ from typing import Mapping, Dict, Set, Optional
 import numpy as np
 from .constants import (
     TP_IOU_THRESHOLD,
-    SEGMENT_MIN_NUM_VOXELS,
+    MIN_SEGMENT_AREA,
     NYU40_NUM_CLASSES,
     NYU40_IGNORE_LABEL,
     PANOPTIC_LABEL_DIVISOR,
@@ -35,7 +35,7 @@ def match_segments(
     gt_labels: np.ndarray,
     pred_labels: np.ndarray,
     match_iou_threshold: float = TP_IOU_THRESHOLD,
-    fp_min_area: int = SEGMENT_MIN_NUM_VOXELS,
+    fp_min_area: int = MIN_SEGMENT_AREA,
 ):
     assert gt_labels.shape == pred_labels.shape
 
@@ -58,6 +58,9 @@ def match_segments(
     )
     intersection_areas = _ids_to_counts(intersection_ids)
 
+    def prediction_ignored_overlap(pred_panoptic_label):
+        return intersection_areas.get(pred_panoptic_label, 0)
+
     gt_matched = set()
     pred_matched = set()
     tp_matches = dict()
@@ -77,6 +80,7 @@ def match_segments(
             gt_segment_areas[gt_panoptic_label]
             + pred_segment_areas[pred_panoptic_label]
             - intersection_area
+            - prediction_ignored_overlap(pred_panoptic_label)
         )
 
         iou = intersection_area / union
@@ -107,10 +111,17 @@ def match_segments(
     for pred_panoptic_label in pred_segment_areas:
         if pred_panoptic_label in pred_matched:
             continue
+
+        if pred_segment_areas[pred_panoptic_label] < fp_min_area:
+            continue
+        # A false positive is not penalized if is mostly ignored in the ignored ground truth
+        if (
+            prediction_ignored_overlap(pred_panoptic_label)
+            / pred_segment_areas[pred_panoptic_label]
+        ) > TP_IOU_THRESHOLD:
+            continue
         class_id = pred_panoptic_label // PANOPTIC_LABEL_DIVISOR
         if class_id == NYU40_IGNORE_LABEL:
-            continue
-        if pred_segment_areas[pred_panoptic_label] < fp_min_area:
             continue
         fp_per_class[class_id] += 1
         fps.add(pred_panoptic_label)
