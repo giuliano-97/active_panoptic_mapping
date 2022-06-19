@@ -1,0 +1,47 @@
+<launch>
+
+    <arg name="namespace" default="data"/> 
+    <arg name="visualize" default="true"/> 
+  
+    <node pkg="panoptic_mapping_evaluation" type="scannet_data_player.py" name="scannet_data_player" output="screen">
+      <param name="scans_dir_path" value="/media/giuliano/wd_ssd/datasets/scannetv2" /> 
+      <param name="scan_id" value="scene0011_01" />
+      <param name="global_frame_name" value="world" /> 
+      <param name="sensor_frame_name" value="depth_camera" /> 
+      <param name="wait" value="true" /> 
+      <param name="use_uncertainty" value="true" />
+      <param name="image_width" value="320" />
+      <param name="image_height" value="240"/>
+      <param name="panoptic_seg_dir" value="mask2former_swin_tiny"/>
+      <param name="max_frames" value="1000"/>
+              
+      <remap from="~color_image" to="$(arg namespace)/color_image" />  
+      <remap from="~depth_image" to="$(arg namespace)/depth_image" />  
+      <remap from="~id_image" to="$(arg namespace)/segmentation_image" />  
+      <remap from="~uncertainty_image" to="$(arg namespace)/uncertainty_image" />
+      <remap from="~labels" to="$(arg namespace)/segmentation_labels" />  
+      <remap from="~pose" to="$(arg namespace)/pose" />
+    </node>
+  
+    <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" required="true">
+      <!-- Config -->
+      <rosparam file="$(find panoptic_mapping_evaluation)/config/mapper/single_tsdf_base.yaml" command="load"/>
+      <rosparam file="$(find panoptic_mapping_evaluation)/config/mapper/variable_count.yaml" command="load"/>
+  
+      <param name="shutdown_when_finished" value="true"/>
+      <param name="save_map_path_when_finished" value="/tmp/test/final"/>
+  
+      <!-- Override default output dir-->
+      <param name="~data_writer/log_data_writer/output_directory" value="/tmp/test"/>
+       
+      <!-- Input -->
+      <remap from="color_image_in" to="$(arg namespace)/color_image"/>
+      <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
+      <remap from="segmentation_image_in" to="$(arg namespace)/segmentation_image"/>
+      <remap from="labels_in" to="$(arg namespace)/segmentation_labels"/>
+      <remap from="uncertainty_image_in" to="$(arg namespace)/uncertainty_image"/>
+    </node>  
+  
+      <!-- RVIZ Visualization-->
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find panoptic_mapping_ros)/config/rviz/devel.rviz" output="screen"/>
+  </launch>

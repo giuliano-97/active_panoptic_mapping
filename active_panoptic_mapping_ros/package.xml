@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>active_panoptic_mapping_ros</name>
+  <version>0.0.0</version>
+  <description>ROS nodes for active panoptic mapping</description>
+
+  <maintainer email="albanesg@student.ethz.ch">Giuliano Albanese</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+  
+  <!-- System dependencies -->
+  <depend>rospy</depend>
+  <depend>roscpp</depend>
+  <depend>message_runtime</depend>
+  <depend>tf2_ros</depend>
+  
+  <!-- Workspace dependencies -->
+  <depend>glog_catkin</depend>
+  <depend>gflags_catkin</depend>
+  <depend>opencv3_catkin</depend>
+  <depend>panoptic_mapping_msgs</depend>
+  <depend>panoptic_mapping_ros</depend>
+  <depend>active_3d_planning_ros</depend>
+  
+  <!-- Project dependencies -->
+  <depend>active_panoptic_mapping_core</depend>
+</package>

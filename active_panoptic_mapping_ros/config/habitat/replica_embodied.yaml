@@ -1,0 +1,27 @@
+agent:
+  embodied: true
+  sensor_height: 0
+  image_width: 320
+  image_height: 240
+
+simulator:
+  enable_physics: false
+  sim_rate: 60
+  sensor_rate: 3
+  control_rate: 30
+  odom_pub_rate: 15
+
+position_controller:
+  kp_x: 1.0
+  kp_y: 1.0
+  kp_z: 1.0
+  kp_yaw: 1.6
+  kd_x: 0.4
+  kd_y: 0.4
+  kd_z: 0.4
+  kd_yaw: 0.8
+  max_horz_speed: 2.0
+  max_vert_speed: 2.0
+  max_yaw_rate_degrees: 20.0
+  reached_thresh_xyz: 0.05
+  reached_thresh_yaw_degrees: 0.05

@@ -1,7 +1,7 @@
 <launch>
     <arg name="visualize" default="false"/>
 
-    <arg name="scene_file" default="/media/giuliano/wd_ssd/datasets/replica/room_2/habitat/mesh_semantic_backup.ply"/>
+    <arg name="scene_file" default="/media/giuliano/wd_ssd/datasets/replica/room_2/habitat/mesh_semantic.ply"/>
 
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen">
         <rosparam file="$(find habitat_ros)/config/default.yaml" command="load" />

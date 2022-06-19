@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>active_panoptic_mapping_core</name>
+  <version>0.0.1</version>
+  <description>Active panoptic mapping core library.</description>
+
+  <maintainer email="albanesg@student.ethz.ch">Giuliano Albanese</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>glog_catkin</depend>
+  <depend>gflags_catkin</depend>
+  <depend>voxblox</depend>
+  <depend>panoptic_mapping</depend>
+  <depend>panoptic_mapping_ros</depend>
+  <depend>active_3d_planning_core</depend>
+</package>

@@ -1,0 +1,8 @@
+<launch>
+    <arg name="bag_file" default="/media/giuliano/wd_ssd/runs/replica/bags/room_2_2022-05-08-21-09-10.bag" />
+    <arg name="rate" default="1"/>
+  
+    <!-- Play Rosbag and RVIZ (visualization) -->
+    <node name="player" pkg="rosbag" type="play" output="screen" args="-r $(arg rate) $(arg bag_file)"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping)/rviz/devel.rviz"/>
+</launch>
