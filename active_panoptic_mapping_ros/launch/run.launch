@@ -7,8 +7,8 @@
     <arg name="record" default="false"/>
 
     <arg name="datasets_dir" default="/media/giuliano/wd_ssd/datasets"/>
-    <arg name="out_dir" default="$(find active_panoptic_mapping)/experiments"/>
-    <arg name="models_dir" default="$(find active_panoptic_mapping)/models"/>
+    <arg name="out_dir" default="$(find active_panoptic_mapping_ros)/experiments"/>
+    <arg name="models_dir" default="$(find active_panoptic_mapping_ros)/models"/>
 
     <!-- Habitat environment config -->
     <arg name="dataset" default="replica"/>
@@ -25,12 +25,12 @@
         default="weighted_tsdf_entropy_panoptic_reconstruction"/> <!-- panoptic_reconstruction, reconstruction, exploration -->
 
     <!-- Load environment params in global namespace -->
-    <rosparam file="$(find active_panoptic_mapping)/config/$(arg environment_config)" command="load"/>
+    <rosparam file="$(find active_panoptic_mapping_ros)/config/$(arg environment_config)" command="load"/>
     
     <!-- Habitat client node -->
     <node pkg="habitat_ros" name="habitat_sim_node" type="habitat_sim_node.py" output="screen" required="true">
         <!-- Config -->
-        <rosparam file="$(find active_panoptic_mapping)/config/$(arg habitat_config)" command="load" />
+        <rosparam file="$(find active_panoptic_mapping_ros)/config/$(arg habitat_config)" command="load" />
         <param name="~scene_file" value="$(arg datasets_dir)/$(arg dataset)/$(arg scene)/habitat/mesh_semantic.ply"/>
         <param name="~wait" value="10"/>
 
@@ -45,12 +45,12 @@
     </node>
 
     <!-- Online panoptic segmentation predictor -->
-    <node pkg="panoptic_segmentation" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
+    <node pkg="active_panoptic_mapping_ros" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
 
         <!-- Config -->
         <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
         <param name="~models_dir" value="$(arg models_dir)"/>
-        <rosparam file="$(find active_panoptic_mapping)/config/panoptic_segmentation/mask2former.yaml"/>
+        <rosparam file="$(find active_panoptic_mapping_ros)/config/panoptic_segmentation/mask2former.yaml"/>
 
         <!-- Topics -->
         <remap from="~input_image" to="$(arg namespace)/color_image" />  
@@ -63,16 +63,16 @@
     </node>
 
     <!-- Mapper + Planner -->
-    <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping" type="active_panoptic_mapping_node" output="screen">
+    <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping_ros" type="active_panoptic_mapping_node" output="screen">
         <!-- Mapper -->
-        <rosparam file="$(find active_panoptic_mapping)/config/mapper/single_tsdf_mapper_base.yaml"/>
-        <rosparam file="$(find active_panoptic_mapping)/config/mapper/$(arg mapper_config).yaml"/>
-        <param name="labels/file_name" value="$(find active_panoptic_mapping)/config/mapper/nyu40_detectron_labels.csv"/>
+        <rosparam file="$(find active_panoptic_mapping_ros)/config/mapper/single_tsdf_mapper_base.yaml"/>
+        <rosparam file="$(find active_panoptic_mapping_ros)/config/mapper/$(arg mapper_config).yaml"/>
+        <param name="labels/file_name" value="$(find active_panoptic_mapping_ros)/config/mapper/nyu40_detectron_labels.csv"/>
         <param name="data_writer/output_directory" value="$(arg out_dir)/logs"/>
         
         <!-- Planner -->
-        <rosparam file="$(find active_panoptic_mapping)/config/planner/volumetric_planner_base.yaml"/>
-        <rosparam file="$(find active_panoptic_mapping)/config/planner/$(arg planner_config).yaml"/>
+        <rosparam file="$(find active_panoptic_mapping_ros)/config/planner/volumetric_planner_base.yaml"/>
+        <rosparam file="$(find active_panoptic_mapping_ros)/config/planner/$(arg planner_config).yaml"/>
         <param name="visualize" value="$(arg visualize)" />
              
         <!-- Topics -->
@@ -91,7 +91,7 @@
     <node pkg="tf" type="static_transform_publisher" name="tf_odom_world" args="0 0 0 0 0 0 1 /world /odom 100"/>  
 
     <!-- RViz -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping)/rviz/devel.rviz" if="$(eval arg('visualize') and arg('has_screen'))"/>   
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping_ros)/rviz/devel.rviz" if="$(eval arg('visualize') and arg('has_screen'))"/>   
 
     <!-- Rosbag -->
     <node name="rosbag_recorder" pkg="rosbag" type="record" 

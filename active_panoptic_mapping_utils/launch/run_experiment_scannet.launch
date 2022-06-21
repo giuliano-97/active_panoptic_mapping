@@ -10,7 +10,7 @@
   <arg name="use_online_panoptic_segmentation" default="false"/> 
 
   <!-- ScanNet data player -->
-  <node pkg="panoptic_mapping_evaluation" type="scannet_data_player.py" name="scannetv2_data_player" output="screen">
+  <node pkg="active_panoptic_mapping_utils" type="scannet_data_player.py" name="scannetv2_data_player" output="screen">
     <param name="scans_dir_path" value="$(arg data_dir)" /> 
     <param name="scan_id" value="$(arg scan_id)" />
     <param name="play_rate" value="0.1" /> 
@@ -32,13 +32,13 @@
 
   <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" required="true">
     <!-- Config -->
-    <rosparam file="$(find panoptic_mapping_evaluation)/config/mapper/single_tsdf_base.yaml"/>
+    <rosparam file="$(find active_panoptic_mapping_utils)/config/mapper/single_tsdf_base.yaml"/>
     <rosparam file="$(arg config)" command="load"/>
     <param name="shutdown_when_finished" value="true"/>
 
     <!-- Override experiment specific parameters -->
     <param name="save_map_path_when_finished" value="$(arg out_dir)/final"/>
-    <param name="labels/file_name" value="$(find panoptic_mapping_evaluation)/config/mapper/nyu40_detectron_labels.csv"/>
+    <param name="labels/file_name" value="$(find active_panoptic_mapping_utils)/config/mapper/nyu40_detectron_labels.csv"/>
     <param name="data_writer/output_directory" value="$(arg out_dir)"/>
      
     <!-- Input -->

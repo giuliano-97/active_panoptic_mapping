@@ -4,5 +4,5 @@
   
     <!-- Play Rosbag and RVIZ (visualization) -->
     <node name="player" pkg="rosbag" type="play" output="screen" args="-r $(arg rate) $(arg bag_file)"/>
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping)/rviz/devel.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find active_panoptic_mapping_ros)/rviz/devel.rviz"/>
 </launch>

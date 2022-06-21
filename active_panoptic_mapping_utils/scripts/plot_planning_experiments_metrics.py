@@ -2,7 +2,6 @@
 
 import argparse
 from pathlib import Path
-from git import BadName
 
 import numpy as np
 import pandas as pd

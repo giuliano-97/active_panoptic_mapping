@@ -49,7 +49,7 @@ class MappingExperimentManager:
         self.mapper_configs = rospy.get_param("~mapper_configs", [])
 
         self.package_path = Path(
-            rospkg.RosPack().get_path("panoptic_mapping_evaluation")
+            rospkg.RosPack().get_path("active_panoptic_mapping_utils")
         )
 
         # TODO: make this configurable?

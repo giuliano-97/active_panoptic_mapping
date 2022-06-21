@@ -10,6 +10,6 @@ do
   mkdir -p ${CUR_EXPERIMENT_DIR}
   export ROS_LOG_DIR="${CUR_EXPERIMENT_DIR}/logs"
   mkdir -p ${ROS_LOG_DIR}
-  roslaunch active_panoptic_mapping run_experiment.launch \
+  roslaunch active_panoptic_mapping_ros run_experiment.launch \
     experiment_name:="${PLANNER}" planner_config:="${PLANNER}" n_reps:=1
 done

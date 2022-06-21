@@ -6,7 +6,7 @@
   <arg name="experiments_dir" default="$(optenv OUT_DIR /media/scratch1/albanesg/planning_experiments)"/>
   <arg name="planner_config" default="panoptic_reconstruction_planner"/>
   <arg name="mapper_config" default="variable_count"/>
-  <node name="planning_experiment_manager" pkg="active_panoptic_mapping" type="experiment_manager.py" output="screen">
+  <node name="planning_experiment_manager" pkg="active_panoptic_mapping_ros" type="experiment_manager.py" output="screen">
     <param name="experiment_name" value="$(arg experiment_name)"/>
     <param name="n_reps" value="$(arg n_reps)"/>
     <param name="duration" value="$(arg duration)"/>

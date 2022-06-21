@@ -23,7 +23,7 @@ do
             echo "${SCENE}/${DIR} has no final.txt" 
             continue
         fi
-        rosrun panoptic_mapping_evaluation visualize_vertex_labels.py \
+        rosrun active_panoptic_mapping_utils visualize_vertex_labels.py \
             ${PRED_VERTEX_LABELS_FILE} ${GT_MESH_FILE}
     done
 done

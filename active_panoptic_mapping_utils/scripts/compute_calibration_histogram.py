@@ -12,8 +12,8 @@ from tqdm import tqdm
 from PIL import Image
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
-from panoptic_segmentation.mask2former.data import datasets
-from panoptic_segmentation.predictors import build_predictor
+from active_panoptic_mapping_core.mask2former.data import datasets
+from active_panoptic_mapping_core.predictors import build_predictor
 
 
 from detectron2.evaluation import DatasetEvaluator

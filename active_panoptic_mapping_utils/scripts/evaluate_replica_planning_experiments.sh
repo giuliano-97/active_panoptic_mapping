@@ -30,7 +30,7 @@ do
     echo "Groundtruth data dir ${SCAN_ID} not found. Experiments won't be evaluated"
     continue
   fi
-  roslaunch panoptic_mapping_evaluation evaluate_experiments.launch \
+  roslaunch active_panoptic_mapping_utils evaluate_experiments.launch \
     experiments_dir:=${DIR} \
     experiment_type:="planning" \
     ground_truth_vertex_labels_file:=${REPLICA_SCENE_DIR}/habitat/panoptic_vertex_labels.txt \
