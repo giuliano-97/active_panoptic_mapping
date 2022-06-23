@@ -4,7 +4,7 @@ from unicodedata import category
 
 import numpy as np
 
-from panoptic_segmentation.constants import (
+from active_panoptic_mapping_core.panoptic_segmentation.constants import (
     NYU40_IGNORE_LABEL,
     NYU40_STUFF_CLASSES,
     PANOPTIC_LABEL_DIVISOR,
