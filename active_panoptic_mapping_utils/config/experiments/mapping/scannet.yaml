@@ -1,4 +1,4 @@
 dataset: scannet
-data_dir: /media/scratch1/albanesg/scans
 mapper_configs: [variable_count, variable_count_weighted, panoptic_fusion, bayesian]
+data_dir: /media/scratch1/albanesg/scans
 out_dir: /media/scratch1/albanesg/mapping_experiments/mask2former_swin_tiny

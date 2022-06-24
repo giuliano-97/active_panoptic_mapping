@@ -2,12 +2,20 @@
 
 if [ -z "$1" ] || [ -z "$2" ]
 then
-  echo "Usage: evaluate_replica_planning_experiments.sh <PLANNING_EXPERIMENTS_DIR> <REPLICA_SCENE_DIR>"
+  echo "Usage: evaluate_replica_planning_experiments.sh <PLANNING_EXPERIMENTS_DIR> <REPLICA_DIR> [<REPLICA_SCENE>]"
   exit 1
 fi
 
 EXPERIMENTS_DIR=$1
-REPLICA_SCENE_DIR=$2
+REPLICA_DIR=$2
+
+REPLICA_SCENE=$3
+if [ -z "$REPLICA_SCENE" ]
+then
+  REPLICA_SCENE="frl_apartment_0"
+fi
+
+REPLICA_SCENE_DIR="${REPLICA_DIR}/${REPLICA_SCENE}"
 
 for DIR in `find ${EXPERIMENTS_DIR} -maxdepth 1`
 do 

@@ -2,7 +2,7 @@
 
 if [ -z "$1" ]
 then
-  echo "Usage: predict_scannet_panoptic_seg.sh <SCANNET_SCANS_DIR> [<MODEL_DIR>]"
+  echo "Usage: predict_scannet_panoptic_labels.sh <SCANNET_SCANS_DIR> [<MODEL_DIR>]"
   exit 1
 fi
 
