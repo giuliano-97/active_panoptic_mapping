@@ -5,8 +5,9 @@
     <arg name="visualize" default="true"/> 
     <arg name="has_screen" default="true"/>
     <arg name="record" default="false"/>
-
-    <arg name="datasets_dir" default="/media/giuliano/wd_ssd/datasets"/>
+    
+    <arg name="use_ground_truth" default="true"/>
+    <arg name="datasets_dir" default="$(find active_panoptic_mapping_ros)/datasets"/>
     <arg name="out_dir" default="$(find active_panoptic_mapping_ros)/experiments"/>
     <arg name="models_dir" default="$(find active_panoptic_mapping_ros)/models"/>
 
@@ -22,7 +23,7 @@
 
     <!-- Planner config -->
     <arg name="planner_config" 
-        default="weighted_tsdf_entropy_panoptic_reconstruction"/> <!-- panoptic_reconstruction, reconstruction, exploration -->
+        default="uncertainty_weighted_voxel_weight"/> <!-- reconstruction, exploration, uncertainty_weighted_tsdf_entropy -->
 
     <!-- Load environment params in global namespace -->
     <rosparam file="$(find active_panoptic_mapping_ros)/config/$(arg environment_config)" command="load"/>
@@ -32,7 +33,7 @@
         <!-- Config -->
         <rosparam file="$(find active_panoptic_mapping_ros)/config/$(arg habitat_config)" command="load" />
         <param name="~scene_file" value="$(arg datasets_dir)/$(arg dataset)/$(arg scene)/habitat/mesh_semantic.ply"/>
-        <param name="~wait" value="10"/>
+        <param name="~wait" value="true"/>
 
         <!-- Topics -->
         <remap from="~rgb" to="$(arg namespace)/color_image"/>
@@ -48,7 +49,7 @@
     <node pkg="active_panoptic_mapping_ros" type="panoptic_segmentation_node.py" name="panoptic_segmentation_node" output="screen">
 
         <!-- Config -->
-        <param name="~use_groundtruth" value="true"/> <!-- Use gt for debugging on machine with no GPU -->
+        <param name="~use_groundtruth" value="$(arg use_ground_truth)"/> <!-- Use gt for debugging on machine with no GPU -->
         <param name="~models_dir" value="$(arg models_dir)"/>
         <rosparam file="$(find active_panoptic_mapping_ros)/config/panoptic_segmentation/mask2former.yaml"/>
 
@@ -56,6 +57,7 @@
         <remap from="~input_image" to="$(arg namespace)/color_image" />  
         <remap from="~pano_seg" to="$(arg namespace)/segmentation_image" />  
         <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
+        <remap from="~pose" to="$(arg namespace)/pose" />
         <remap from="~gt_instance_seg" to="$(arg namespace)/gt_instance_seg"/>
         <remap from="~gt_semantic_seg" to="$(arg namespace)/gt_semantic_seg"/>
         <remap from="~pano_seg_vis" to="$(arg namespace)/pano_seg_vis"/>
@@ -63,7 +65,7 @@
     </node>
 
     <!-- Mapper + Planner -->
-    <node name="active_panoptic_mapping_node" pkg="active_panoptic_mapping_ros" type="active_panoptic_mapping_node" output="screen">
+    <node pkg="active_panoptic_mapping_ros" name="active_panoptic_mapping_node"  type="active_panoptic_mapping_node" output="screen">
         <!-- Mapper -->
         <rosparam file="$(find active_panoptic_mapping_ros)/config/mapper/single_tsdf_mapper_base.yaml"/>
         <rosparam file="$(find active_panoptic_mapping_ros)/config/mapper/$(arg mapper_config).yaml"/>

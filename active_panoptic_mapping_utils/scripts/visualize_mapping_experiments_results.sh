@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
-EXPERIMENTS_DIR=/media/giuliano/wd_ssd/mapping_experiments/mask2former_swin_tiny
-SCANS_DIR=/media/giuliano/wd_ssd/datasets/scannetv2
+if [ -z "$1" ] || [ -z "$2" ]
+then
+    echo "Usage: visualize_mapping_experiments_results.sh <EXPERIMENTS_DIR> <SCANNET_SCANS_DIR>"
+    exit 1
+fi
+
+EXPERIMENTS_DIR=$1
+SCANS_DIR=$2
 
 for SCENE in `ls ${EXPERIMENTS_DIR} | grep scene`
 do  

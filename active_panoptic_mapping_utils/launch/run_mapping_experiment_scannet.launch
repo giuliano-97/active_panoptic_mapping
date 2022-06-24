@@ -7,7 +7,6 @@
   <arg name="scan_id"/>
   
   <arg name="namespace" default="data"/> 
-  <arg name="use_online_panoptic_segmentation" default="false"/> 
 
   <!-- ScanNet data player -->
   <node pkg="active_panoptic_mapping_utils" type="scannet_data_player.py" name="scannetv2_data_player" output="screen">

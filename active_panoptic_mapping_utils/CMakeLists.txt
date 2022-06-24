@@ -18,8 +18,9 @@ cs_install()
 
 catkin_install_python(
   PROGRAMS 
-    app/evaluation_manager_node.py 
-    app/experiment_manager_node.py
+    app/evaluation_manager.py 
+    app/mapping_experiment_manager.py
+    app/planning_experiment_manager.py
     app/scannet_data_player.py
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION})

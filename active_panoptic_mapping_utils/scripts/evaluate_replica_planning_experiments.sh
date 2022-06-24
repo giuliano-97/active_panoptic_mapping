@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-if [ -z "$1" ]
+if [ -z "$1" ] || [ -z "$2" ]
 then
-  echo "Usage: evaluate_replica_planning_experiments.sh <PLANNING_EXPERIMENTS_DIR>"
+  echo "Usage: evaluate_replica_planning_experiments.sh <PLANNING_EXPERIMENTS_DIR> <REPLICA_SCENE_DIR>"
   exit 1
 fi
 
-REPLICA_SCENE_DIR=/media/scratch1/albanesg/replica/frl_apartment_0
 EXPERIMENTS_DIR=$1
+REPLICA_SCENE_DIR=$2
 
 for DIR in `find ${EXPERIMENTS_DIR} -maxdepth 1`
 do 
@@ -34,5 +34,5 @@ do
     experiments_dir:=${DIR} \
     experiment_type:="planning" \
     ground_truth_vertex_labels_file:=${REPLICA_SCENE_DIR}/habitat/panoptic_vertex_labels.txt \
-    ground_truth_pointcloud_file:=${REPLICA_SCENE_DIR}/habitat/mesh_semantic_decimated.ply
+    ground_truth_pointcloud_file:=${REPLICA_SCENE_DIR}/habitat/mesh_semantic.ply
 done

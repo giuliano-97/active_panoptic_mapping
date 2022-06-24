@@ -2,7 +2,7 @@
   
   <arg name="config" default="scannet.yaml"/>
 
-  <node name="mapping_experiment_manager" pkg="active_panoptic_mapping_utils" type="experiment_manager_node.py">
-    <rosparam file="$(find active_panoptic_mapping_utils)/config/experiments/$(arg config)" command="load" />
+  <node name="mapping_experiment_manager" pkg="active_panoptic_mapping_utils" type="mapping_experiment_manager.py">
+    <rosparam file="$(find active_panoptic_mapping_utils)/config/experiments/mapping/$(arg config)" command="load" />
   </node>
 </launch> 

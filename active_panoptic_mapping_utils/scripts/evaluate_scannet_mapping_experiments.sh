@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
-if [ -z "$1" ]
+HELP_MSG="Usage: evaluate_scannet_mapping_experiments.sh <MAPPING_EXPERIMENTS_DIR> <SCANNET_SCANS_DIR>"
+
+if [ -z "$1" ] || [ -z "$2" ]
 then
-  echo "Usage: evaluate_scannet_mapping_experiments.sh <MAPPING_EXPERIMENTS_DIR>"
+  echo $HELP_MSG
   exit 1
 fi
 
-SCANS_DIR=/media/scratch1/albanesg/scans
 EXPERIMENTS_DIR=$1
+SCANS_DIR=$2
 
 for DIR in `find ${EXPERIMENTS_DIR} -maxdepth 1 -name "scene*"`
 do 
