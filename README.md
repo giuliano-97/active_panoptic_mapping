@@ -49,7 +49,7 @@ This project uses [Robostack](https://robostack.github.io/) so only a minimal `c
     wstool merge -t . ./active_panoptic_mapping/active_panoptic_mapping.rosinstall
     wstool update
     ```
-1. Apply some minor patches to the `eigen_catkin` and `opencv_catkin` packages to avoid compilation errors:
+1. Apply some minor patches to the `eigen_catkin` and `opencv3_catkin` packages to avoid compilation errors:
     ```
     bash active_panoptic_mapping/apply_patches.sh
     ```
@@ -59,11 +59,25 @@ This project uses [Robostack](https://robostack.github.io/) so only a minimal `c
     source ../devel/setup.bash
     ```
 
+## Examples
 ### Replica Demo
 
 1. Download the Replica dataset by following the download instructions [on the GitHub page](https://github.com/facebookresearch/Replica-Dataset#download-on-mac-os-and-linux). 
-1. Launch the `active_panoptic_mapping_node`:
+1. Launch the `active_panoptic_mapping_node` on the Replica "FRL-Apartment-0" scene:
     ```
     roslaunch active_panoptic_mapping_ros run.launch datasets_dir:=$(dirname <PATH_TO_REPLICA_DIR>)
 
+    ```
+1. Start publishing simulated sensor data:
+    ```
+    rosservice call /habitat_sim_node/toggle_pub_sensor_data true
+    ```
+1. Start the planner:
+    ```
+    rosservice call /active_panoptic_mapping_node/toggle_running true
+    ```
+
+1. By default, this will use the ground truth panoptic labels provided by the simulation. To use panoptic labels predicted online by Mask2Former, you  need to additionally pass the use_ground_truth:=false argument:
+    ```
+    roslaunch active_panoptic_mapping_ros run.launch datasets_dir:=$(dirname <PATH_TO_REPLICA_DIR>) use_ground_truth:=false
     ```
