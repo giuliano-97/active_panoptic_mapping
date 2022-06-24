@@ -27,4 +27,5 @@
   
   <!-- Project dependencies -->
   <depend>active_panoptic_mapping_core</depend>
+  <depend>habitat_ros</depend>
 </package>
