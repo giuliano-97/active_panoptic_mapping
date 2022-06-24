@@ -1,4 +1,4 @@
-name: robostackenv
+name: active_panoptic_mapping_env
 channels:
   - RoboStack
   - robostack
@@ -559,4 +559,3 @@ dependencies:
     - urllib3==1.26.9
     - webdataset==0.1.40
     - yacs==0.1.8
-prefix: /home/giuliano/miniconda3/envs/robostackenv

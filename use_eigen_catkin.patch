@@ -1,0 +1,4 @@
+1c1
+< set(USE_SYSTEM_EIGEN "OFF")
+---
+> set(USE_SYSTEM_EIGEN "AUTO")

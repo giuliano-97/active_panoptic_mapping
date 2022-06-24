@@ -1,0 +1,32 @@
+<launch>
+
+  <arg name="experiment_type" default="mapping"/>
+  <arg name="export_mesh" default="true"/>
+  <arg name="ground_truth_vertex_labels_file" 
+    default="/media/scratch1/albanesg/scans/scene0187_00/panoptic_vertex_labels.txt"/>
+  <arg name="ground_truth_pointcloud_file" 
+    default="/media/scratch1/albanesg/scans/scene0187_00/scene0187_00_vh_clean_2.ply"/>
+  <arg name="experiments_dir"
+    default="/media/scratch1/albanesg/mapping_experiments/mask2former_swin_tiny/scene0187_00"/>
+
+  <node pkg="active_panoptic_mapping_utils" name="evaluation_manager" type="evaluation_manager_node.py" required="true">
+    <param name="data_dir" value="$(arg experiments_dir)"/>
+    <param name="export_eval_data_srv_name" value="export_evaluation_data"/>
+    <param name="ground_truth_vertex_labels_file" value="$(arg ground_truth_vertex_labels_file)"/>
+    <param name="experiment_type" value="$(arg experiment_type)"/>
+  </node>
+
+  <node name="evaluation_data_export" pkg="active_panoptic_mapping_utils" type="evaluation_data_export_node">
+    <param name="ground_truth_pointcloud_file" value="$(arg ground_truth_pointcloud_file)"/>
+    <param name="is_single_tsdf" value="true"/>
+    <param name="export_mesh" value="$(arg export_mesh)"/>
+    <param name="refine_alignment" value="true" if="$(eval arg('experiment_type') == 'planning')"/>
+    <!-- Only required for Replica -->
+    <rosparam param="alignment_transformation">
+      [0.0, -1.0, 0.0, 0.0,
+       1.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 1.0, 0.0,
+       0.0, 0.0, 0.0, 1.0]
+    </rosparam>
+  </node>
+</launch>

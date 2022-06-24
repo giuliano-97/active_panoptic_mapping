@@ -1,8 +1,0 @@
-<launch>
-  
-  <arg name="config" default="scannet.yaml"/>
-
-  <node name="mapping_experiment_manager" pkg="panoptic_mapping_evaluation" type="experiment_manager_node.py">
-    <rosparam file="$(find panoptic_mapping_evaluation)/config/experiments/$(arg config)" command="load" />
-  </node>
-</launch> 

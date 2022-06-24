@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>active_panoptic_mapping_utils</name>
+  <version>0.0.0</version>
+  <description>Setup and evaluation utils for active panoptic mapping.</description>
+  <maintainer email="albanesg@student.ethz.ch">Giuliano Albanese</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>roscpp</depend>
+  <depend>pcl_ros</depend>
+
+  <depend>glog_catkin</depend>
+  <depend>gflags_catkin</depend>
+  <depend>voxblox</depend>
+  <depend>panoptic_mapping</depend>
+  <depend>panoptic_mapping_msgs</depend>
+  <depend>panoptic_mapping_ros</depend>
+
+  <depend>habitat_ros</depend>
+  <depend>active_3d_planning_ros</depend>
+  <depend>active_panoptic_mapping_ros</depend>
+
+  <export>
+  </export>
+</package>

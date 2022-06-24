@@ -1,7 +1,0 @@
-<launch>
-    <node name="evaluation_data_export" pkg="panoptic_mapping_evaluation" type="evaluation_data_export_node">
-        <param name="ground_truth_pointcloud_file" 
-            value="/media/scratch1/albanesg/scans/scene0011_01/scene0011_01_vh_clean_2.ply"/>
-        <param name="is_single_tsdf" value="false"/>
-    </node>
-</launch>

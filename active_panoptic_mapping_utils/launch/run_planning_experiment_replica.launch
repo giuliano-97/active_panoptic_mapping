@@ -1,0 +1,18 @@
+<launch>
+  <arg name="experiment_name" default="reconstruction"/>
+  <arg name="n_reps" default="5"/>
+  <arg name="duration" default="1200"/>
+  <arg name="save_map_every_n_sec" default="60"/>
+  <arg name="experiments_dir" default="$(find active_panoptic_mapping_ros)/experiments"/>
+  <arg name="planner_config" default="reconstruction_planner"/>
+  <arg name="mapper_config" default="variable_count"/>
+  <node name="planning_experiment_manager" pkg="active_panoptic_mapping_utils" type="planning_experiment_manager.py" output="screen">
+    <param name="experiment_name" value="$(arg experiment_name)"/>
+    <param name="n_reps" value="$(arg n_reps)"/>
+    <param name="duration" value="$(arg duration)"/>
+    <param name="save_map_every_n_sec" value="$(arg save_map_every_n_sec)"/>
+    <param name="planner_config" value="$(arg planner_config)"/>
+    <param name="mapper_config" value="$(arg mapper_config)"/>
+    <param name="out_dir" value="$(arg experiments_dir)/$(arg experiment_name)"/>
+  </node>
+</launch>
