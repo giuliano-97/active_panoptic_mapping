@@ -1,4 +1,4 @@
-name: active_panoptic_mapping_env
+name: active_panoptic_mapping
 channels:
   - RoboStack
   - robostack
