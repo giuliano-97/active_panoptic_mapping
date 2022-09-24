@@ -10,15 +10,17 @@ fi
 
 SCANS_DIR_PATH=$1
 
-for SENS_FILE in $(find ${SCAN_DIR_PATH} -type f -name *.sens)
+for SENS_FILE in $(find ${SCANS_DIR_PATH} -type f -name "*.sens")
 do  
     SCAN_DIR="$(dirname "$SENS_FILE")"
-    python3 extract_scans_data \
+    SCAN_NAME=$(basename "$SCAN_DIR")
+    echo "Extracting scan $SCAN_NAME"
+    python3 extract_scan_data.py \
         --filename $SENS_FILE \
         --output_path $SCAN_DIR \
         --export_color \
         --export_depth \
         --export_pose \
         --export_intrinsic \
-        --image-size 640 480
+        --image_size 640 480
 done
