@@ -19,6 +19,8 @@ class MappingExperimentManager:
 
         self.out_dir_path = Path(rospy.get_param("~out_dir"))
 
+        self.pano_seg_dir = rospy.get_param("~pano_seg_dir", "pano_seg")
+
         scans = rospy.get_param("~scans", None)
         if scans is not None:
             self.scan_dirs = []
@@ -29,7 +31,7 @@ class MappingExperimentManager:
                     and scan_dir_path.joinpath("color").is_dir()
                     and scan_dir_path.joinpath("depth").is_dir()
                     and scan_dir_path.joinpath("pose").is_dir()
-                    and scan_dir_path.joinpath("panoptic_pred").is_dir()
+                    and scan_dir_path.joinpath(self.pano_seg_dir).is_dir()
                 ):
                     self.scan_dirs.append(scan_dir_path)
 
@@ -41,7 +43,7 @@ class MappingExperimentManager:
                 and p.joinpath("color").is_dir()
                 and p.joinpath("depth").is_dir()
                 and p.joinpath("pose").is_dir()
-                and p.joinpath("panoptic_pred").is_dir()
+                and p.joinpath(self.pano_seg_dir).is_dir()
             ]
         if len(self.scan_dirs) < 1:
             rospy.logfatal(f"No scan directories were found in {self.data_dir_path}")
@@ -67,7 +69,7 @@ class MappingExperimentManager:
             "\n**************************************************************"
         )
         launch_file_path = (
-            self.package_path / "launch" / "run_experiment_scannet.launch"
+            self.package_path / "launch" / "run_mapping_experiment_scannet.launch"
         )
 
         cli_args = [
@@ -76,6 +78,7 @@ class MappingExperimentManager:
             f"data_dir:={str(scan_dir_path.parent)}",
             f"scan_id:={str(scan_dir_path.name)}",
             f"out_dir:={str(out_dir_path)}",
+            f"pano_seg_dir:={str(self.pano_seg_dir)}",
         ]
 
         roslaunch_args = cli_args[1:]

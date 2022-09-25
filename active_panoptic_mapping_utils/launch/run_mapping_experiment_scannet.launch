@@ -5,6 +5,7 @@
   <arg name="out_dir"/>
   <arg name="data_dir"/>
   <arg name="scan_id"/>
+  <arg name="pano_seg_dir"/>
   
   <arg name="namespace" default="data"/> 
 
@@ -19,7 +20,7 @@
     <param name="use_uncertainty" value="true" />
     <param name="image_width" value="320" />
     <param name="image_height" value="240"/>
-    <param name="panoptic_seg_dir" value="mask2former_swin_tiny"/>
+    <param name="panoptic_seg_dir" value="$(arg pano_seg_dir)"/>
             
     <remap from="~color_image" to="$(arg namespace)/color_image" />  
     <remap from="~depth_image" to="$(arg namespace)/depth_image" />  
