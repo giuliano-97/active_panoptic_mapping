@@ -261,7 +261,7 @@ class FrameDataLoader:
         if self.use_uncertainty:
             uncertainty_image_file_path = (
                 self.scan_dir_path
-                / _PANOPTIC_PRED_DIR
+                / self.pano_seg_dir
                 / "{:05d}_uncertainty.tiff".format(int(frame_id))
             )
             frame_data.uncertainty = cv2.resize(
