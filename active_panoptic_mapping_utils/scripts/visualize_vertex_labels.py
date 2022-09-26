@@ -6,11 +6,11 @@ from pathlib import Path
 import numpy as np
 from plyfile import PlyData, PlyElement
 
-from active_panoptic_mapping_utils.constants import (
+from active_panoptic_mapping_utils.evaluation.constants import (
     PANOPTIC_LABEL_DIVISOR,
     SCANNET_NYU40_EVALUATION_CLASSES,
 )
-from active_panoptic_mapping_utils.visualization import (
+from active_panoptic_mapping_utils.evaluation.visualization import (
     colorize_panoptic_labels,
     colorize_semantic_labels,
 )
