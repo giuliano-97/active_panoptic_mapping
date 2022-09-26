@@ -9,7 +9,7 @@
   <arg name="experiments_dir"
     default="/media/scratch1/albanesg/mapping_experiments/mask2former_swin_tiny/scene0187_00"/>
 
-  <node pkg="active_panoptic_mapping_utils" name="evaluation_manager" type="evaluation_manager_node.py" required="true">
+  <node pkg="active_panoptic_mapping_utils" name="evaluation_manager" type="evaluation_manager.py" required="true">
     <param name="data_dir" value="$(arg experiments_dir)"/>
     <param name="export_eval_data_srv_name" value="export_evaluation_data"/>
     <param name="ground_truth_vertex_labels_file" value="$(arg ground_truth_vertex_labels_file)"/>
