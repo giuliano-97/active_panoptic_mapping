@@ -21,7 +21,8 @@ TP_KEY = "TP"
 FP_KEY = "FP"
 FN_KEY = "FN"
 
-MIOU_KEY = "mIoU"
+IOU_KEY_SUFFIX = "iou"
+MIOU_KEY = f"avg_{IOU_KEY_SUFFIX}"
 
 PQ_SQ_RQ_KEYS = [
     PQ_KEY,
@@ -47,13 +48,15 @@ TP_FP_FN_KEYS = [
 
 NYU40_IGNORE_LABEL = 0
 
-NYU40_NUM_CLASSES = 41  # Including the ignore label
+NYU40_NUM_CLASSES = 40  # Including the ignore label
+
+NYU40_CLASSES = list(range(1, NYU40_NUM_CLASSES + 1))
 
 NYU40_STUFF_CLASSES = [1, 2, 22]
 
 NYU40_THING_CLASSES = [
     i
-    for i in range(NYU40_NUM_CLASSES)
+    for i in range(NYU40_NUM_CLASSES + 1)
     if i not in NYU40_STUFF_CLASSES and i != NYU40_IGNORE_LABEL
 ]
 

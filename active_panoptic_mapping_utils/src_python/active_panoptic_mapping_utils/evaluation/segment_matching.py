@@ -39,10 +39,10 @@ def match_segments(
 ):
     assert gt_labels.shape == pred_labels.shape
 
-    iou_per_class = np.zeros(NYU40_NUM_CLASSES, dtype=np.float64)
-    tp_per_class = np.zeros(NYU40_NUM_CLASSES, dtype=np.float64)
-    fp_per_class = np.zeros(NYU40_NUM_CLASSES, dtype=np.float64)
-    fn_per_class = np.zeros(NYU40_NUM_CLASSES, dtype=np.float64)
+    iou_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.float64)
+    tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint64)
+    fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint64)
+    fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint64)
     fps = set()
 
     gt_segment_areas = _ids_to_counts(gt_labels)
