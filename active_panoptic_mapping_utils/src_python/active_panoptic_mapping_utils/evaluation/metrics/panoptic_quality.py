@@ -14,6 +14,7 @@ from ..constants import (
     NYU40_NUM_CLASSES,
     NYU40_THING_CLASSES,
     NYU40_STUFF_CLASSES,
+    NYU40_CLASS_IDS_TO_NAMES,
     SCANNET_NYU40_EVALUATION_CLASSES,
 )
 from ..segment_matching import match_segments
@@ -77,7 +78,7 @@ def _compute_qualities(
     else:
         pq_st = 0
 
-    return {
+    result = {
         PQ_KEY: pq,
         PQ_THING_KEY: pq_th,
         PQ_STUFF_KEY: pq_st,
@@ -88,6 +89,17 @@ def _compute_qualities(
         FN_KEY: fn,
     }
 
+    # Add per-class metrics
+    for class_id in SCANNET_NYU40_EVALUATION_CLASSES:
+        class_name = NYU40_CLASS_IDS_TO_NAMES[class_id]
+        result[f"{PQ_KEY}_{class_name}"] = pq_per_class[class_id]
+        result[f"{SQ_KEY}_{class_name}"] = sq_per_class[class_id]
+        result[f"{RQ_KEY}_{class_name}"] = rq_per_class[class_id]
+        result[f"{TP_KEY}_{class_name}"] = tp_per_class[class_id]
+        result[f"{FP_KEY}_{class_name}"] = fp_per_class[class_id]
+        result[f"{FN_KEY}_{class_name}"] = fn_per_class[class_id]
+
+    return result
 
 class PanopticQuality:
     def __init__(self, iou_threshold: float = TP_IOU_THRESHOLD):
