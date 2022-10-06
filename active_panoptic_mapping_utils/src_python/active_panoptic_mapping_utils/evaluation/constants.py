@@ -46,6 +46,8 @@ TP_FP_FN_KEYS = [
     FN_KEY,
 ]
 
+COVERAGE_KEY = "Coverage"
+
 NYU40_IGNORE_LABEL = 0
 
 NYU40_NUM_CLASSES = 40  # Including the ignore label
