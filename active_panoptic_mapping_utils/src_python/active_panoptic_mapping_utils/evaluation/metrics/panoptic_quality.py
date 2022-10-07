@@ -105,9 +105,9 @@ class PanopticQuality:
     def __init__(self, iou_threshold: float = TP_IOU_THRESHOLD):
         self.iou_threshold = iou_threshold
         self._iou_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.float64)
-        self._tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint128)
-        self._fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint128)
-        self._fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint128)
+        self._tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
+        self._fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
+        self._fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
 
     def update(self, gt_labels, pred_labels):
         if gt_labels.shape != pred_labels.shape:

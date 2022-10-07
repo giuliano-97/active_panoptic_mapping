@@ -30,10 +30,12 @@ def _compute_mean_iou(
             np.sum(confusion_matrix[not_ignored, class_id])
         )
 
-    iou_per_class = np.nan_to_num(
-        tp_per_class / (tp_per_class + fp_per_class + fn_per_class),
-        nan=0.0,
-    )
+    
+    with np.errstate(divide="ignore", invalid="ignore"):
+        iou_per_class = np.nan_to_num(
+            tp_per_class / (tp_per_class + fp_per_class + fn_per_class),
+            nan=0.0,
+        )
 
     # Compute iou only for evaluation classes
     result = {}
@@ -52,10 +54,10 @@ def _compute_confusion_matrix(gt_panoptic_labels, pred_panoptic_labels):
 
     # Ignore areas were ground truth is void
     pred_semantic_labels_valid = pred_semantic_labels[
-        gt_semantic_labels == NYU40_IGNORE_LABEL
+        gt_semantic_labels != NYU40_IGNORE_LABEL
     ]
     gt_semantic_labels_valid = gt_semantic_labels[
-        gt_semantic_labels == NYU40_IGNORE_LABEL
+        gt_semantic_labels != NYU40_IGNORE_LABEL
     ]
 
     return skmetrics.confusion_matrix(
@@ -78,10 +80,12 @@ class MeanIoU:
         pred_panoptic_labels,
     ):
         # Compute confusion matrix and add it
-        self.confusion_matrix += _compute_confusion_matrix(
+        cmat = _compute_confusion_matrix(
             gt_panoptic_labels,
             pred_panoptic_labels,
-        )
+        ).astype(np.uint64)
+
+        self.confusion_matrix += cmat
 
     def compute(self):
         return _compute_mean_iou(self.confusion_matrix)

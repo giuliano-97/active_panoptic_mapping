@@ -7,7 +7,7 @@ import numpy as np
 import rospy
 from tqdm import tqdm
 
-from active_panoptic_mapping_utils import ExportEvaluationData
+from active_panoptic_mapping_utils.srv import ExportEvaluationData
 
 from active_panoptic_mapping_utils.evaluation.constants import (
     NYU40_IGNORE_LABEL,
@@ -48,7 +48,7 @@ class EvaluationManager:
 
         self.export_eval_data_srv_name = rospy.get_param(
             "~export_eval_data_srv_name",
-            "/panoptic_mapping_evaluation/export_evaluation_data",
+            "/export_evaluation_data",
         )
 
         if not self.experiments_dir_path.is_dir():
@@ -64,7 +64,7 @@ class EvaluationManager:
         map_gt_dir_name = (
             map_file_path.parents[2].name
             if self.experiment_type == "planning"
-            else map_file_path.parent.name
+            else map_file_path.parents[1].name
         )
         return self.gt_dir_path / map_gt_dir_name
 
@@ -169,7 +169,7 @@ class EvaluationManager:
                 )
 
                 if not gt_vertex_labels_file_path.is_file():
-                    rospy.logerror(
+                    rospy.logerr(
                         f"Ground truth labels not found for {str(pred_vertex_labels_file_path)}."
                         " Skipped."
                     )
@@ -250,8 +250,13 @@ class EvaluationManager:
                 pred_vertex_labels_files
             )
 
+        metrics_by_method = {
+            method: {k: float(v) for k, v in metrics.items()}
+            for method, metrics in metrics_by_method.items()
+        }
+
         metrics_file_path = self.experiments_dir_path / "metrics.json"
-        with open(metrics_file_path, 'w') as f:
+        with open(metrics_file_path, "w") as f:
             json.dump(metrics_by_method, f, indent=4)
 
 
