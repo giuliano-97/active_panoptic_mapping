@@ -1,6 +1,8 @@
 import json
+from collections.abc import Mapping
 from collections import defaultdict
 from pathlib import Path
+from re import S
 from typing import List
 
 import numpy as np
@@ -24,6 +26,24 @@ from active_panoptic_mapping_utils.evaluation.metrics import (
     compose,
 )
 
+def make_dict_json_serializable(d):
+    sd = {}
+    for k, v in d.items():
+        if isinstance(v, (np.ndarray, np.generic)):
+            if np.issubdtype(v.dtype, np.integer):
+                v = v.astype(int)
+            elif np.issubdtype(v.dtype, np.floating):
+                v = v.astype(float)
+            else:
+                raise ValueError("unsupported numpy dtype in metrics")                    
+
+            if isinstance(v, np.ndarray):
+                sd[k] = v.tolist()
+            elif isinstance(v, np.generic):
+                sd[k] = v.item()
+        elif isinstance(v, Mapping):
+            sd[k] = make_dict_json_serializable(v)
+    return sd
 
 def mask_ignored_categories(vertex_panoptic_labels: np.ndarray):
     res = np.copy(vertex_panoptic_labels)
@@ -250,14 +270,12 @@ class EvaluationManager:
                 pred_vertex_labels_files
             )
 
-        metrics_by_method = {
-            method: {k: float(v) for k, v in metrics.items()}
-            for method, metrics in metrics_by_method.items()
-        }
+        serializable_metrics_by_method = make_dict_json_serializable(metrics_by_method)
+            
 
         metrics_file_path = self.experiments_dir_path / "metrics.json"
         with open(metrics_file_path, "w") as f:
-            json.dump(metrics_by_method, f, indent=4)
+            json.dump(serializable_metrics_by_method, f, indent=4)
 
 
 if __name__ == "__main__":

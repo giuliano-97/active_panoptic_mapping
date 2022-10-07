@@ -1,6 +1,4 @@
 import numpy as np
-
-import numpy as np
 from sklearn import metrics as skmetrics
 
 from ..constants import (
@@ -30,6 +28,10 @@ def _compute_mean_iou(
             np.sum(confusion_matrix[not_ignored, class_id])
         )
 
+    valid_classes = np.intersect1d(
+        SCANNET_NYU40_EVALUATION_CLASSES  ,
+        np.nonzero(tp_per_class + fp_per_class + fn_per_class),
+    )
     
     with np.errstate(divide="ignore", invalid="ignore"):
         iou_per_class = np.nan_to_num(
@@ -40,10 +42,12 @@ def _compute_mean_iou(
     # Compute iou only for evaluation classes
     result = {}
 
-    result[MIOU_KEY] = np.mean(iou_per_class[SCANNET_NYU40_EVALUATION_CLASSES])
-    for class_id in SCANNET_NYU40_EVALUATION_CLASSES:
+    result[MIOU_KEY] = np.mean(iou_per_class[valid_classes])
+    for class_id in valid_classes:
         class_name = NYU40_CLASS_IDS_TO_NAMES[class_id]
         result[f"{class_name}_{IOU_KEY_SUFFIX}"] = iou_per_class[class_id]
+
+    result["semantic_confusion_matrix"] = confusion_matrix
 
     return result
 

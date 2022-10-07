@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Mapping, Dict, Set, Optional
+from typing import Mapping, Dict, Set, Tuple
 
 import numpy as np
 from .constants import (
@@ -16,13 +16,13 @@ _OFFSET = 256 * 256
 
 @dataclass
 class SegmentMatchingResult:
-    tp_per_class: np.ndarray
     iou_per_class: np.ndarray
+    tp_per_class: np.ndarray
     fp_per_class: np.ndarray
     fn_per_class: np.ndarray
-    tp_matches: Dict[int, int]
-    fp_matches: Dict[int, int]
-    fps: Optional[Set[int]] = None
+    matching: Dict[int, int]
+    unmatched_gt_segments: Set[int]
+    matched_segments_confusion_matrix: np.ndarray
 
 
 def _ids_to_counts(id_grid: np.ndarray) -> Mapping[int, int]:
@@ -43,7 +43,6 @@ def match_segments(
     tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint64)
     fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint64)
     fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint64)
-    fps = set()
 
     gt_segment_areas = _ids_to_counts(gt_labels)
     pred_segment_areas = _ids_to_counts(pred_labels)
@@ -63,8 +62,15 @@ def match_segments(
 
     gt_matched = set()
     pred_matched = set()
-    tp_matches = dict()
-    fp_matches = dict()
+    matching: Dict[int, int] = {}
+    unmatched_gt_segments = set()
+    matched_segments_confusion_matrix = np.zeros((NYU40_NUM_CLASSES + 1, NYU40_NUM_CLASSES + 1), dtype=np.ulonglong)
+
+    def record_match(pred_panoptic_label, gt_panoptic_label):
+        matching.update({pred_panoptic_label: gt_panoptic_label})
+        pred_semantic_label = pred_panoptic_label // PANOPTIC_LABEL_DIVISOR
+        gt_semantic_label = gt_panoptic_label // PANOPTIC_LABEL_DIVISOR
+        matched_segments_confusion_matrix[gt_semantic_label, pred_semantic_label] += 1        
 
     for intersection_id, intersection_area in intersection_areas.items():
         gt_panoptic_label = intersection_id // _OFFSET
@@ -85,16 +91,15 @@ def match_segments(
 
         iou = intersection_area / union
         if iou > match_iou_threshold:
+            record_match(pred_panoptic_label, gt_panoptic_label)
             # Sanity check on FP mathces
             if gt_class_id != pred_class_id:
-                fp_matches.update({pred_panoptic_label: gt_panoptic_label})
                 continue
             # Record a TP
             tp_per_class[gt_class_id] += 1
             iou_per_class[gt_class_id] += iou
             gt_matched.add(gt_panoptic_label)
             pred_matched.add(pred_panoptic_label)
-            tp_matches.update({pred_panoptic_label: gt_panoptic_label})
 
     for gt_panoptic_label in gt_segment_areas:
         if gt_panoptic_label == NYU40_IGNORE_LABEL:
@@ -106,6 +111,7 @@ def match_segments(
         if class_id == NYU40_IGNORE_LABEL:
             continue
         fn_per_class[class_id] += 1
+        unmatched_gt_segments.add(gt_panoptic_label)
 
     # Count false positives for each category.
     for pred_panoptic_label in pred_segment_areas:
@@ -124,14 +130,14 @@ def match_segments(
         if class_id == NYU40_IGNORE_LABEL:
             continue
         fp_per_class[class_id] += 1
-        fps.add(pred_panoptic_label)
+        matching.update({pred_panoptic_label: 0})
 
     return SegmentMatchingResult(
         tp_per_class=tp_per_class,
         iou_per_class=iou_per_class,
         fp_per_class=fp_per_class,
         fn_per_class=fn_per_class,
-        tp_matches=tp_matches,
-        fp_matches=fp_matches,
-        fps=fps,
+        matching=matching,
+        unmatched_gt_segments=unmatched_gt_segments,
+        matched_segments_confusion_matrix=matched_segments_confusion_matrix,
     )
