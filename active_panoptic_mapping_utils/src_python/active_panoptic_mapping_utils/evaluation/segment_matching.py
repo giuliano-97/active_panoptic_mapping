@@ -64,13 +64,15 @@ def match_segments(
     pred_matched = set()
     matching: Dict[int, int] = {}
     unmatched_gt_segments = set()
-    matched_segments_confusion_matrix = np.zeros((NYU40_NUM_CLASSES + 1, NYU40_NUM_CLASSES + 1), dtype=np.ulonglong)
+    matched_segments_confusion_matrix = np.zeros(
+        (NYU40_NUM_CLASSES + 1, NYU40_NUM_CLASSES + 1), dtype=np.ulonglong
+    )
 
     def record_match(pred_panoptic_label, gt_panoptic_label):
         matching.update({pred_panoptic_label: gt_panoptic_label})
         pred_semantic_label = pred_panoptic_label // PANOPTIC_LABEL_DIVISOR
         gt_semantic_label = gt_panoptic_label // PANOPTIC_LABEL_DIVISOR
-        matched_segments_confusion_matrix[gt_semantic_label, pred_semantic_label] += 1        
+        matched_segments_confusion_matrix[gt_semantic_label, pred_semantic_label] += 1
 
     for intersection_id, intersection_area in intersection_areas.items():
         gt_panoptic_label = intersection_id // _OFFSET

@@ -8,7 +8,7 @@ from typing import List, Callable
 class Compose:
     def __init__(self, metrics: List):
         self.metrics = metrics
-        
+
     def update(self, gt_labels, pred_labels):
         for metric in self.metrics:
             metric.update(gt_labels, pred_labels)
@@ -17,11 +17,11 @@ class Compose:
         result = {}
         for metric in self.metrics:
             result.update(metric.compute())
-        
+
         return result
-    
+
+
 def compose(metrics: List[Callable]):
-    
     def compute_metrics(gt_labels, pred_labels):
         result = {}
         for metric in metrics:

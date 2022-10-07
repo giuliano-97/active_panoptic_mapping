@@ -41,7 +41,7 @@ def _compute_qualities(
     # Evaluate only on classes which appear at least once in the groundtruth
     # and are in the validation classes used by the ScanNet benchmark
     valid_classes = np.intersect1d(
-        SCANNET_NYU40_EVALUATION_CLASSES  ,
+        SCANNET_NYU40_EVALUATION_CLASSES,
         np.nonzero(tp_per_class + fp_per_class + fn_per_class),
     )
 
@@ -108,7 +108,9 @@ class PanopticQuality:
         self._tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
         self._fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
         self._fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
-        self._matched_segments_confusion_matrix = np.zeros((NYU40_NUM_CLASSES + 1, NYU40_NUM_CLASSES + 1), dtype=np.ulonglong)
+        self._matched_segments_confusion_matrix = np.zeros(
+            (NYU40_NUM_CLASSES + 1, NYU40_NUM_CLASSES + 1), dtype=np.ulonglong
+        )
 
     def update(self, gt_labels, pred_labels):
         if gt_labels.shape != pred_labels.shape:
@@ -124,7 +126,9 @@ class PanopticQuality:
         self._tp_per_class += matching_result.tp_per_class
         self._fp_per_class += matching_result.fp_per_class
         self._fn_per_class += matching_result.fn_per_class
-        self._matched_segments_confusion_matrix += matching_result.matched_segments_confusion_matrix
+        self._matched_segments_confusion_matrix += (
+            matching_result.matched_segments_confusion_matrix
+        )
 
     def compute(self):
         return _compute_qualities(
@@ -132,7 +136,7 @@ class PanopticQuality:
             self._tp_per_class,
             self._fp_per_class,
             self._fn_per_class,
-            self._matched_segments_confusion_matrix
+            self._matched_segments_confusion_matrix,
         )
 
 

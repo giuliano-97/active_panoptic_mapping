@@ -12,6 +12,7 @@ from ..constants import (
     PANOPTIC_LABEL_DIVISOR,
 )
 
+
 def _compute_mean_iou(
     confusion_matrix: np.ndarray,
 ):
@@ -29,10 +30,10 @@ def _compute_mean_iou(
         )
 
     valid_classes = np.intersect1d(
-        SCANNET_NYU40_EVALUATION_CLASSES  ,
+        SCANNET_NYU40_EVALUATION_CLASSES,
         np.nonzero(tp_per_class + fp_per_class + fn_per_class),
     )
-    
+
     with np.errstate(divide="ignore", invalid="ignore"):
         iou_per_class = np.nan_to_num(
             tp_per_class / (tp_per_class + fp_per_class + fn_per_class),
@@ -95,9 +96,6 @@ class MeanIoU:
         return _compute_mean_iou(self.confusion_matrix)
 
 
-def mean_iou(
-    gt_labels: np.ndarray,
-    pred_labels: np.ndarray
-):
+def mean_iou(gt_labels: np.ndarray, pred_labels: np.ndarray):
     confusion_matrix = _compute_confusion_matrix(gt_labels, pred_labels)
     return _compute_mean_iou(confusion_matrix)
