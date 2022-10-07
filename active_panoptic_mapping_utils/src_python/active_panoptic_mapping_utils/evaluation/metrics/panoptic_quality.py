@@ -1,5 +1,5 @@
+from nis import match
 import numpy as np
-from sklearn import metrics as skmetrics
 
 from ..constants import (
     PQ_KEY,
@@ -19,18 +19,13 @@ from ..constants import (
 )
 from ..segment_matching import match_segments
 
-_THING_CLASSES_MASK = np.isin(np.arange(NYU40_NUM_CLASSES + 1), NYU40_THING_CLASSES)
-_STUFF_CLASSES_MASK = np.isin(np.arange(NYU40_NUM_CLASSES + 1), NYU40_STUFF_CLASSES)
-_EVAL_CLASSES_MASK = np.isin(
-    np.arange(NYU40_NUM_CLASSES + 1), SCANNET_NYU40_EVALUATION_CLASSES
-)
-
 
 def _compute_qualities(
     iou_per_class: np.ndarray,
     tp_per_class: np.ndarray,
     fp_per_class: np.ndarray,
     fn_per_class: np.ndarray,
+    matched_segments_confusion_matrix: np.ndarray = None,
 ):
     """
     Computes Panoptic Quality (PQ), Segmentation Quality (SQ), and Recognition Quality (RQ)
@@ -45,36 +40,37 @@ def _compute_qualities(
 
     # Evaluate only on classes which appear at least once in the groundtruth
     # and are in the validation classes used by the ScanNet benchmark
-    valid_classes_mask = _EVAL_CLASSES_MASK & np.not_equal(
-        tp_per_class + fp_per_class + fn_per_class, 0
+    valid_classes = np.intersect1d(
+        SCANNET_NYU40_EVALUATION_CLASSES,
+        np.nonzero(tp_per_class + fp_per_class + fn_per_class),
     )
 
     # Eval metrics,
     qualities_per_class = np.row_stack((pq_per_class, sq_per_class, rq_per_class))
     counts_per_class = np.row_stack((tp_per_class, fp_per_class, fn_per_class))
     tp, fp, fn = np.sum(
-        counts_per_class[:, valid_classes_mask],
+        counts_per_class[:, valid_classes],
         axis=1,
     )
 
-    if np.count_nonzero(valid_classes_mask) > 0:
+    if len(valid_classes) > 0:
         pq, sq, rq = np.mean(
-            qualities_per_class[:, valid_classes_mask],
+            qualities_per_class[:, valid_classes],
             axis=1,
         )
     else:
         pq, sq, rq = 0, 0, 0
 
     # Also compute pq for thing and stuff classes only
-    valid_thing_classes_mask = valid_classes_mask & _THING_CLASSES_MASK
-    if np.count_nonzero(valid_thing_classes_mask) > 0:
-        pq_th = np.mean(qualities_per_class[0][valid_thing_classes_mask])
+    valid_thing_classes = np.intersect1d(valid_classes, NYU40_THING_CLASSES)
+    if len(valid_thing_classes) > 0:
+        pq_th = np.mean(qualities_per_class[0][valid_thing_classes])
     else:
         pq_th = 0
 
-    valid_stuff_classes_mask = valid_classes_mask & _STUFF_CLASSES_MASK
-    if np.count_nonzero(valid_stuff_classes_mask) > 0:
-        pq_st = np.mean(qualities_per_class[0][valid_stuff_classes_mask])
+    valid_stuff_classes = np.intersect1d(valid_classes, NYU40_STUFF_CLASSES)
+    if len(valid_stuff_classes) > 0:
+        pq_st = np.mean(qualities_per_class[0][valid_stuff_classes])
     else:
         pq_st = 0
 
@@ -90,7 +86,7 @@ def _compute_qualities(
     }
 
     # Add per-class metrics
-    for class_id in SCANNET_NYU40_EVALUATION_CLASSES:
+    for class_id in valid_classes:
         class_name = NYU40_CLASS_IDS_TO_NAMES[class_id]
         result[f"{PQ_KEY}_{class_name}"] = pq_per_class[class_id]
         result[f"{SQ_KEY}_{class_name}"] = sq_per_class[class_id]
@@ -99,15 +95,22 @@ def _compute_qualities(
         result[f"{FP_KEY}_{class_name}"] = fp_per_class[class_id]
         result[f"{FN_KEY}_{class_name}"] = fn_per_class[class_id]
 
+    if matched_segments_confusion_matrix is not None:
+        result["matched_segments_confusion_matrix"] = matched_segments_confusion_matrix
+
     return result
+
 
 class PanopticQuality:
     def __init__(self, iou_threshold: float = TP_IOU_THRESHOLD):
         self.iou_threshold = iou_threshold
         self._iou_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.float64)
-        self._tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint128)
-        self._fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint128)
-        self._fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.uint128)
+        self._tp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
+        self._fn_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
+        self._fp_per_class = np.zeros(NYU40_NUM_CLASSES + 1, dtype=np.ulonglong)
+        self._matched_segments_confusion_matrix = np.zeros(
+            (NYU40_NUM_CLASSES + 1, NYU40_NUM_CLASSES + 1), dtype=np.ulonglong
+        )
 
     def update(self, gt_labels, pred_labels):
         if gt_labels.shape != pred_labels.shape:
@@ -123,6 +126,9 @@ class PanopticQuality:
         self._tp_per_class += matching_result.tp_per_class
         self._fp_per_class += matching_result.fp_per_class
         self._fn_per_class += matching_result.fn_per_class
+        self._matched_segments_confusion_matrix += (
+            matching_result.matched_segments_confusion_matrix
+        )
 
     def compute(self):
         return _compute_qualities(
@@ -130,6 +136,7 @@ class PanopticQuality:
             self._tp_per_class,
             self._fp_per_class,
             self._fn_per_class,
+            self._matched_segments_confusion_matrix,
         )
 
 
@@ -157,4 +164,5 @@ def panoptic_quality(
         tp_per_class=tp_per_class,
         fp_per_class=fp_per_class,
         fn_per_class=fn_per_class,
+        matched_segments_confusion_matrix=matching_result.matched_segments_confusion_matrix,
     )

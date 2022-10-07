@@ -1,18 +1,18 @@
 import numpy as np
-
-import numpy as np
 from sklearn import metrics as skmetrics
 
 from ..constants import (
+    IOU_KEY_PREFIX,
     NYU40_IGNORE_LABEL,
     MIOU_KEY,
-    IOU_KEY_SUFFIX,
+    IOU_KEY_PREFIX,
     NYU40_NUM_CLASSES,
     NYU40_CLASSES,
     NYU40_CLASS_IDS_TO_NAMES,
     SCANNET_NYU40_EVALUATION_CLASSES,
     PANOPTIC_LABEL_DIVISOR,
 )
+
 
 def _compute_mean_iou(
     confusion_matrix: np.ndarray,
@@ -30,18 +30,26 @@ def _compute_mean_iou(
             np.sum(confusion_matrix[not_ignored, class_id])
         )
 
-    iou_per_class = np.nan_to_num(
-        tp_per_class / (tp_per_class + fp_per_class + fn_per_class),
-        nan=0.0,
+    valid_classes = np.intersect1d(
+        SCANNET_NYU40_EVALUATION_CLASSES,
+        np.nonzero(tp_per_class + fp_per_class + fn_per_class),
     )
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        iou_per_class = np.nan_to_num(
+            tp_per_class / (tp_per_class + fp_per_class + fn_per_class),
+            nan=0.0,
+        )
 
     # Compute iou only for evaluation classes
     result = {}
 
-    result[MIOU_KEY] = np.mean(iou_per_class[SCANNET_NYU40_EVALUATION_CLASSES])
-    for class_id in SCANNET_NYU40_EVALUATION_CLASSES:
+    result[MIOU_KEY] = np.mean(iou_per_class[valid_classes])
+    for class_id in valid_classes:
         class_name = NYU40_CLASS_IDS_TO_NAMES[class_id]
-        result[f"{class_name}_{IOU_KEY_SUFFIX}"] = iou_per_class[class_id]
+        result[f"{IOU_KEY_PREFIX}_{class_name}"] = iou_per_class[class_id]
+
+    result["semantic_confusion_matrix"] = confusion_matrix
 
     return result
 
@@ -52,10 +60,10 @@ def _compute_confusion_matrix(gt_panoptic_labels, pred_panoptic_labels):
 
     # Ignore areas were ground truth is void
     pred_semantic_labels_valid = pred_semantic_labels[
-        gt_semantic_labels == NYU40_IGNORE_LABEL
+        gt_semantic_labels != NYU40_IGNORE_LABEL
     ]
     gt_semantic_labels_valid = gt_semantic_labels[
-        gt_semantic_labels == NYU40_IGNORE_LABEL
+        gt_semantic_labels != NYU40_IGNORE_LABEL
     ]
 
     return skmetrics.confusion_matrix(
@@ -78,18 +86,17 @@ class MeanIoU:
         pred_panoptic_labels,
     ):
         # Compute confusion matrix and add it
-        self.confusion_matrix += _compute_confusion_matrix(
+        cmat = _compute_confusion_matrix(
             gt_panoptic_labels,
             pred_panoptic_labels,
-        )
+        ).astype(np.uint64)
+
+        self.confusion_matrix += cmat
 
     def compute(self):
         return _compute_mean_iou(self.confusion_matrix)
 
 
-def mean_iou(
-    gt_labels: np.ndarray,
-    pred_labels: np.ndarray
-):
+def mean_iou(gt_labels: np.ndarray, pred_labels: np.ndarray):
     confusion_matrix = _compute_confusion_matrix(gt_labels, pred_labels)
     return _compute_mean_iou(confusion_matrix)

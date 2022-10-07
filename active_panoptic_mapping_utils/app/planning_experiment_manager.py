@@ -23,7 +23,9 @@ class PlanningExperimentManager:
         self.out_dir_path.mkdir(parents=True, exist_ok=True)
         self.map_file_name_template = "{:06d}.panmap"
 
-        self.package_path = Path(rospkg.RosPack().get_path("active_panoptic_mapping_ros"))
+        self.package_path = Path(
+            rospkg.RosPack().get_path("active_panoptic_mapping_ros")
+        )
         self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         roslaunch.configure_logging(self.uuid)
 

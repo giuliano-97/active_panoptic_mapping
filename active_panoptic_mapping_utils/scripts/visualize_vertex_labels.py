@@ -80,9 +80,11 @@ def visualize_vertex_labels(
                 PlyElement.describe(gt_mesh["face"].data, "face"),
             ],
             text=False,
-        ).write(        vertex_labels_file_path.parent.joinpath(
-            vertex_labels_file_path.name.split(".")[0]
-        ).with_suffix(".semantic_labels.ply"))
+        ).write(
+            vertex_labels_file_path.parent.joinpath(
+                vertex_labels_file_path.name.split(".")[0]
+            ).with_suffix(".semantic_labels.ply")
+        )
 
 
 def _parse_args():

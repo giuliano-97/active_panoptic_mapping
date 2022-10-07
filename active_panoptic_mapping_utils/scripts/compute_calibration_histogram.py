@@ -26,7 +26,7 @@ def _ids_to_counts(id_grid: np.ndarray):
     return dict(zip(ids, counts))
 
 
-def match_segments(gt_labels, pred_labels, match_iou_threshold=0.5, offset=256 ** 2):
+def match_segments(gt_labels, pred_labels, match_iou_threshold=0.5, offset=256**2):
 
     gt_segment_areas = _ids_to_counts(gt_labels)
     pred_segment_areas = _ids_to_counts(pred_labels)

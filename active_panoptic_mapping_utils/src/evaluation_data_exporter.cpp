@@ -19,7 +19,6 @@
 using namespace panoptic_mapping;
 
 void EvaluationDataExporter::Config::setupParamsAndPrinting() {
-  setupParam("ground_truth_pointcloud_file", &ground_truth_pointcloud_file);
   setupParam("output_suffix", &output_suffix);
   setupParam("is_single_tsdf", &is_single_tsdf);
   setupParam("export_mesh", &export_mesh);
@@ -30,8 +29,6 @@ void EvaluationDataExporter::Config::setupParamsAndPrinting() {
 }
 
 void EvaluationDataExporter::Config::checkParams() const {
-  checkParamCond(std::filesystem::is_regular_file(ground_truth_pointcloud_file),
-                 ground_truth_pointcloud_file + " is not a valid file!");
   checkParamCond(alignment_transformation.size() == 16,
                  "alignment_transformation must be a vector of length 16");
 }
@@ -50,11 +47,6 @@ EvaluationDataExporter::EvaluationDataExporter(
 }
 
 void EvaluationDataExporter::setupMembers() {
-  gt_cloud_ptr_ = std::make_unique<pcl::PointCloud<pcl::PointXYZ>>();
-  if (pcl::io::loadPLYFile<pcl::PointXYZ>(config_.ground_truth_pointcloud_file,
-                                          *gt_cloud_ptr_) != 0) {
-    LOG(FATAL) << "Could not load ground truth pointcloud!";
-  }
   // clang-format off
   const auto& t = config_.alignment_transformation;
   default_alignment_transformation_ << t[0], t[1], t[2], t[3],
@@ -72,6 +64,7 @@ void EvaluationDataExporter::setupRos() {
 
 bool EvaluationDataExporter::exportVertexLabels(
     const std::shared_ptr<panoptic_mapping::SubmapCollection>& submaps,
+    std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> gt_cloud_ptr,
     const Eigen::Matrix4d& alignment_transformation,
     const std::filesystem::path& vertex_labels_file_path,
     const std::optional<std::unordered_map<int, int>>& id_to_class_map) {
@@ -80,7 +73,7 @@ bool EvaluationDataExporter::exportVertexLabels(
       new pcl::PointCloud<pcl::PointXYZ>());
   Eigen::Matrix4d inv_alignment_transformation =
       alignment_transformation.inverse();
-  pcl::transformPointCloud(*gt_cloud_ptr_, *inv_aligned_gt_cloud_ptr,
+  pcl::transformPointCloud(*gt_cloud_ptr, *inv_aligned_gt_cloud_ptr,
                            inv_alignment_transformation);
 
   std::vector<int> predicted_vertex_labels(
@@ -171,7 +164,8 @@ bool EvaluationDataExporter::exportMesh(
 }
 
 Eigen::Matrix4d EvaluationDataExporter::computeAlignmentTransformation(
-    const std::shared_ptr<panoptic_mapping::SubmapCollection>& submaps) {
+    const std::shared_ptr<panoptic_mapping::SubmapCollection>& submaps,
+    std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> gt_cloud_ptr) {
   using PointT = pcl::PointXYZ;
   using PointCloudT = pcl::PointCloud<PointT>;
 
@@ -205,7 +199,7 @@ Eigen::Matrix4d EvaluationDataExporter::computeAlignmentTransformation(
   pcl::IterativeClosestPoint<PointT, PointT> icp;
   icp.setEuclideanFitnessEpsilon(1e-05);
   icp.setInputSource(icp_cloud_ptr);
-  icp.setInputTarget(gt_cloud_ptr_);
+  icp.setInputTarget(gt_cloud_ptr);
   icp.align(*icp_cloud_ptr);
 
   // Return the final transformation
@@ -214,13 +208,21 @@ Eigen::Matrix4d EvaluationDataExporter::computeAlignmentTransformation(
 }
 
 bool EvaluationDataExporter::exportEvaluationDataCallback(
-    panoptic_mapping_msgs::SaveLoadMap::Request& request,
-    panoptic_mapping_msgs::SaveLoadMap::Response& response) {
+    active_panoptic_mapping_utils::ExportEvaluationData::Request& request,
+    active_panoptic_mapping_utils::ExportEvaluationData::Response& response) {
+  LOG(INFO) << "Loading ground truth pointcloud.";
+  auto gt_cloud_ptr = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+  if (pcl::io::loadPLYFile<pcl::PointXYZ>(request.gt_file_path,
+                                          *gt_cloud_ptr) != 0) {
+    LOG(ERROR) << "Could not load ground truth pointcloud!";
+    return false;
+  }
+
   // Load submap collection for which eval data should be exported
   LOG(INFO) << "Exporting evaluation data.";
   auto submaps = std::make_shared<SubmapCollection>();
-  if (!submaps->loadFromFile(request.file_path)) {
-    LOG(ERROR) << "Could not load panoptic map from " << request.file_path
+  if (!submaps->loadFromFile(request.map_file_path)) {
+    LOG(ERROR) << "Could not load panoptic map from " << request.map_file_path
                << ".";
     return false;
   }
@@ -228,14 +230,15 @@ bool EvaluationDataExporter::exportEvaluationDataCallback(
   auto alignment_transformation = default_alignment_transformation_;
   // Refine alignment transformation using ICP
   if (config_.refine_alignment) {
-    alignment_transformation = computeAlignmentTransformation(submaps);
+    alignment_transformation =
+        computeAlignmentTransformation(submaps, gt_cloud_ptr);
   }
 
   // Export vertex labels
-  std::filesystem::path vertex_labels_file_path = request.file_path;
+  std::filesystem::path vertex_labels_file_path = request.map_file_path;
   vertex_labels_file_path.replace_extension(".txt");
 
-  std::filesystem::path id_to_class_map_file_path(request.file_path);
+  std::filesystem::path id_to_class_map_file_path(request.map_file_path);
   id_to_class_map_file_path.replace_extension(".csv");
   if (std::filesystem::is_regular_file(id_to_class_map_file_path)) {
     std::unordered_map<int, int> id_to_class_map;
@@ -249,16 +252,16 @@ bool EvaluationDataExporter::exportEvaluationDataCallback(
         id_to_class_map[inst] = cls;
       }
     }
-    exportVertexLabels(submaps, alignment_transformation,
+    exportVertexLabels(submaps, gt_cloud_ptr, alignment_transformation,
                        vertex_labels_file_path, id_to_class_map);
   } else {
-    exportVertexLabels(submaps, alignment_transformation,
+    exportVertexLabels(submaps, gt_cloud_ptr, alignment_transformation,
                        vertex_labels_file_path);
   }
 
   // Export mesh
   if (config_.export_mesh) {
-    std::filesystem::path mesh_file_path = request.file_path;
+    std::filesystem::path mesh_file_path = request.map_file_path;
     mesh_file_path.replace_extension(".ply");
     if (!exportMesh(submaps, mesh_file_path)) {
       LOG(ERROR) << "An error occurred while exporting the mesh! Skipped.";

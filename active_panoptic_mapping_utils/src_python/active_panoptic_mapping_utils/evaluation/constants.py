@@ -21,8 +21,8 @@ TP_KEY = "TP"
 FP_KEY = "FP"
 FN_KEY = "FN"
 
-IOU_KEY_SUFFIX = "iou"
-MIOU_KEY = f"avg_{IOU_KEY_SUFFIX}"
+IOU_KEY_PREFIX = "iou"
+MIOU_KEY = f"{IOU_KEY_PREFIX}_avg"
 
 PQ_SQ_RQ_KEYS = [
     PQ_KEY,
@@ -45,6 +45,8 @@ TP_FP_FN_KEYS = [
     FP_KEY,
     FN_KEY,
 ]
+
+COVERAGE_KEY = "Coverage"
 
 NYU40_IGNORE_LABEL = 0
 
