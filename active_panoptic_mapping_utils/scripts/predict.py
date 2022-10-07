@@ -10,7 +10,9 @@ from tqdm import tqdm
 from PIL import Image
 
 from active_panoptic_mapping_core.panoptic_segmentation import build_predictor
-from active_panoptic_mapping_core.panoptic_segmentation.visualization import colorize_panoptic_segmentation
+from active_panoptic_mapping_core.panoptic_segmentation.visualization import (
+    colorize_panoptic_segmentation,
+)
 
 
 def predict(

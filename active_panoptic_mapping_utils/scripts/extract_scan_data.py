@@ -355,7 +355,6 @@ class SensorData:
                 )
 
 
-
 def main():
     # If not specified use the same directory as the .sens file
     if opt.output_path is None:

@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
@@ -29,6 +30,7 @@ _METRIC_TO_TITLE = {
 }
 _HUE_NAME = "Method"
 
+
 def main(
     experiments_dir_path: Path,
 ):
@@ -44,7 +46,9 @@ def main(
     metrics_data = []
     for metrics_file_path in experiments_dir_path.glob("**/metrics.csv"):
         metrics_df = pd.read_csv(metrics_file_path).sort_values(by=["Method", "MapID"])
-        metrics_df[_X_AXIS_NAME] = metrics_df.apply(lambda L: int(L.MapID) // 60, axis=1)
+        metrics_df[_X_AXIS_NAME] = metrics_df.apply(
+            lambda L: int(L.MapID) // 60, axis=1
+        )
         metrics_data.append(metrics_df)
 
     # Now concatenate
@@ -53,7 +57,7 @@ def main(
 
     # Now for each metric
     # sns.set_style("darkgrid")
-    sns.set_style("whitegrid", {'axes.grid' : False})
+    sns.set_style("whitegrid", {"axes.grid": False})
     sns.set(font_scale=1.5)
     for metric in _EVALUATION_METRICS + _OTHER_METRICS:
         plot_data_df = metrics_data_df[[_HUE_NAME, _X_AXIS_NAME, metric]]
@@ -102,4 +106,3 @@ def _parse_args():
 if __name__ == "__main__":
     args = _parse_args()
     main(args.experiments_dir)
-
