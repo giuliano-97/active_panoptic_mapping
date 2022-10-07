@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from collections import defaultdict
 from pathlib import Path
 from typing import List
+import functools
 
 import numpy as np
 import rospy
@@ -132,6 +133,17 @@ class EvaluationManager:
 
         return pred_vertex_labels_files
 
+    @staticmethod
+    @functools.lru_cache(maxsize=50)
+    def _load_vertex_labels_cached(vertex_labels_file_path: Path):
+        return np.loadtxt(str(vertex_labels_file_path)).astype(np.int64)
+
+    def _load_gt_vertex_labels(self, gt_vertex_labels_file_path: Path):
+        gt_vertex_labels = mask_ignored_categories(
+            EvaluationManager._load_vertex_labels_cached(gt_vertex_labels_file_path)
+        )
+        return gt_vertex_labels
+
     def _load_gt_and_pred_vertex_labels(
         self,
         gt_vertex_labels_file_path: Path,
@@ -139,9 +151,7 @@ class EvaluationManager:
     ):
         # Load gt and predicted vertex panoptic labels
         # FIXME: should we mask here? it's already done in the metrics
-        gt_vertex_labels = mask_ignored_categories(
-            np.loadtxt(str(gt_vertex_labels_file_path)).astype(np.int64)
-        )
+        gt_vertex_labels = self._load_gt_vertex_labels(gt_vertex_labels_file_path)
         pred_panoptic_vertex_labels = np.loadtxt(
             str(pred_vertex_labels_file_path)
         ).astype(np.int64)
@@ -173,7 +183,7 @@ class EvaluationManager:
 
     def _evaluate_mapping_experiments(self, pred_vertex_labels_files: List[Path]):
         pred_vertex_labels_files_by_method = defaultdict(list)
-
+        
         for p in pred_vertex_labels_files:
             method = p.parent.name
             pred_vertex_labels_files_by_method[method].append(p)
@@ -184,8 +194,9 @@ class EvaluationManager:
             method_name,
             method_pred_vertex_labels_files,
         ) in pred_vertex_labels_files_by_method.items():
+            rospy.loginfo(f"Computing metrics for method: {method_name}")
             mapping_metrics = Compose([PanopticQuality(), MeanIoU()])
-            for pred_vertex_labels_file_path in method_pred_vertex_labels_files:
+            for pred_vertex_labels_file_path in tqdm(method_pred_vertex_labels_files):
                 gt_vertex_labels_file_path = self._get_map_gt_vertex_labels_file(
                     pred_vertex_labels_file_path.with_suffix(".panmap")
                 )
