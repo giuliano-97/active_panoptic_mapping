@@ -2,9 +2,10 @@ import numpy as np
 from sklearn import metrics as skmetrics
 
 from ..constants import (
+    IOU_KEY_PREFIX,
     NYU40_IGNORE_LABEL,
     MIOU_KEY,
-    IOU_KEY_SUFFIX,
+    IOU_KEY_PREFIX,
     NYU40_NUM_CLASSES,
     NYU40_CLASSES,
     NYU40_CLASS_IDS_TO_NAMES,
@@ -46,7 +47,7 @@ def _compute_mean_iou(
     result[MIOU_KEY] = np.mean(iou_per_class[valid_classes])
     for class_id in valid_classes:
         class_name = NYU40_CLASS_IDS_TO_NAMES[class_id]
-        result[f"{class_name}_{IOU_KEY_SUFFIX}"] = iou_per_class[class_id]
+        result[f"{IOU_KEY_PREFIX}_{class_name}"] = iou_per_class[class_id]
 
     result["semantic_confusion_matrix"] = confusion_matrix
 
