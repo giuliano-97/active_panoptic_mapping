@@ -1,0 +1,7 @@
+<launch>
+    
+    <include file="$(find active_panoptic_mapping_utils)/launch/evaluate_experiments.launch">
+        <arg name="experiments_dir" value="/media/scratch1/albanesg/mapping_experiments/test"/>
+    </include>
+
+</launch>
